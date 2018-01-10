@@ -167,28 +167,6 @@ function makeAssignments() {
 
 }
 
-function getOpenTickets(subdomain, userName, token)
-{
-
-  token = userName + "/token:" + token;
-  var encode = Utilities.base64Encode(token);
-
-  var options =
-      {
-        "method" : "get",
-        "headers" :
-        {
-          "Content-type":"application/xml",
-          "Authorization":  "Basic " + encode
-        }
-      };
-
-  var result = UrlFetchApp.fetch("https://" + subdomain + ".zendesk.com/api/v2/tickets/recent.json tags:[YourTags] order_by:created sort:asc", options);
-
-  return(result);
-
-}
-
 function seekOpenTickets(subdomain, userName, token)
 {
 
