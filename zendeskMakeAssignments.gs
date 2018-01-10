@@ -445,10 +445,13 @@ function isVerboseLogging() {
 }
 
 function setConfiguration() {
-  const sheetId = "1816972386";
+  const sheetId = "SHEET_ID";
+  const spreadsheet = SpreadsheetApp.openById(sheetId);
+  const configurationSheet = spreadsheet.getSheetByName('Configuration')
+
   const maxRange = '10';
   const verboseLogging = 'true';
-  const subdomain = 'subdomain';
+  const subdomain = configurationSheet.getRange('B1').getValue();;
   const username = 'username';
   const zendeskToken= 'token';
 
