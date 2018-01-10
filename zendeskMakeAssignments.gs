@@ -440,15 +440,34 @@ function getFormColumn_(formType)
   return(-1);
 }
 
-function main() {
+function isVerboseLogging() {
+  return(PropertiesService.getScriptProperties().getProperty('verboseLogging') === 'true');
+}
 
-  //Set Global Properties
-  PropertiesService.getScriptProperties().setProperty('mcpSheetId', '[YourSheetID]');
-  PropertiesService.getScriptProperties().setProperty('maxRange', '10');
-  PropertiesService.getScriptProperties().setProperty('verboseLogging', 'true');
-  PropertiesService.getScriptProperties().setProperty('subdomain', '[YourSubDomain]');
-  PropertiesService.getScriptProperties().setProperty('userName', '[YourUserName]');
-  PropertiesService.getScriptProperties().setProperty('token', '[YourToken]');
+function setConfiguration() {
+  const sheetId = "1816972386";
+  const maxRange = '10';
+  const verboseLogging = 'true';
+  const subdomain = 'subdomain';
+  const username = 'username';
+  const zendeskToken= 'token';
+
+  PropertiesService.getScriptProperties().setProperty('mcpSheetId', sheetId);
+  PropertiesService.getScriptProperties().setProperty('maxRange', maxRange);
+  PropertiesService.getScriptProperties().setProperty('verboseLogging', verboseLogging);
+  PropertiesService.getScriptProperties().setProperty('subdomain', subdomain);
+  PropertiesService.getScriptProperties().setProperty('userName', username);
+  PropertiesService.getScriptProperties().setProperty('token', zendeskToken);
+
+  if(isVerboseLogging()) {
+    Logger.log('Set Configuration:');
+    Logger.log(PropertiesService.getScriptProperties().getProperties());
+  }
+}
+
+
+function main() {
+  setConfiguration();
 
   makeAssignments();
 }
