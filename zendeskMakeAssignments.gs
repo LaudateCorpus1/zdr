@@ -451,9 +451,9 @@ function setConfiguration() {
 
   const maxRange = '10';
   const verboseLogging = 'true';
-  const subdomain = configurationSheet.getRange('B1').getValue();;
-  const username = 'username';
-  const zendeskToken= 'token';
+  const subdomain = configurationSheet.getRange('B1').getValue();
+  const username = configurationSheet.getRange('B2').getValue();
+  const zendeskToken= configurationSheet.getRange('B3').getValue();
 
   PropertiesService.getScriptProperties().setProperty('mcpSheetId', sheetId);
   PropertiesService.getScriptProperties().setProperty('maxRange', maxRange);
