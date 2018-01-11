@@ -467,9 +467,12 @@ function setAgentStatus() {
 
   // Get all rows, except the header row
   const agentStatusRange = agentSheet.getRange('A2:A');
+  const agentNameRange = agentSheet.getRange('B2:B');
+  const agentNameRows = agentNameRange.getValues();
   const shiftRange = agentSheet.getRange('H2:H');
 
   var shiftCell, shiftData, shiftStart, shiftEnd;
+  var agentName, agentStatus;
 
   shiftRange.getValues().forEach(function(row, index) {
     shiftCell = row[0]
@@ -477,12 +480,16 @@ function setAgentStatus() {
     shiftStart = shiftData[0];
     shiftEnd = shiftData[1];
 
+    agentName = agentNameRows[index][0];
+
     // TODO: Timezones
     if(currentHour >= shiftStart && currentHour < shiftEnd) {
-      debug('Set status to Active: ' + shiftCell);
+      agentStatus = 'Yes';
     } else {
-      debug('Set Status to Not Active: ' + shiftCell);
+      agentStatus = 'No';
     }
+
+    debug('Set ' + agentName + ' status to: ' + agentStatus);
   });
 }
 
