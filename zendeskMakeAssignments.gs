@@ -440,8 +440,14 @@ function getFormColumn_(formType)
   return(-1);
 }
 
-function isVerboseLogging() {
-  return(PropertiesService.getScriptProperties().getProperty('verboseLogging') === 'true');
+function isDebugMode() {
+  return(PropertiesService.getScriptProperties().getProperty('debug') === 'true');
+}
+
+function debug(data) {
+  if(isDebugMode()) {
+    Logger.log(data);
+  }
 }
 
 // Set if agents are active based on their schedule.
@@ -457,9 +463,7 @@ function setAgentStatus() {
   // const currentHour = currentDate.getUTCHours();
   const currentHour = 18;
 
-  if(isVerboseLogging()) {
-    Logger.log('Current hour in UTC: ' + currentHour);
-  }
+  debug('Current hour in UTC: ' + currentHour);
 
   // Get all rows, except the header row
   const agentStatusRange = agentSheet.getRange('A2:A');
@@ -475,13 +479,9 @@ function setAgentStatus() {
 
     // TODO: Timezones
     if(currentHour >= shiftStart && currentHour < shiftEnd) {
-      if(isVerboseLogging()) {
-        Logger.log('Set status to Active: ' + shiftCell)
-      }
+      debug('Set status to Active: ' + shiftCell);
     } else {
-      if(isVerboseLogging()) {
-        Logger.log('Set Status to Not Active: ' + shiftCell);
-      }
+      debug('Set Status to Not Active: ' + shiftCell);
     }
   });
 }
