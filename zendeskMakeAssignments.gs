@@ -444,6 +444,48 @@ function isVerboseLogging() {
   return(PropertiesService.getScriptProperties().getProperty('verboseLogging') === 'true');
 }
 
+// Set if agents are active based on their schedule.
+// Configured through the Google Scripts UI to be executed on an hourly basis as a time-driven trigger.
+function setAgentStatus() {
+  setConfiguration();
+
+  const sheetId = PropertiesService.getScriptProperties().getProperty('sheetId');
+  const spreadsheet = SpreadsheetApp.openById(sheetId);
+  const agentSheet = spreadsheet.getSheetByName('Support Agents');
+
+  const currentDate = new Date();
+  // const currentHour = currentDate.getUTCHours();
+  const currentHour = 18;
+
+  if(isVerboseLogging()) {
+    Logger.log('Current hour in UTC: ' + currentHour);
+  }
+
+  // Get all rows, except the header row
+  const agentStatusRange = agentSheet.getRange('A2:A');
+  const shiftRange = agentSheet.getRange('H2:H');
+
+  var shiftCell, shiftData, shiftStart, shiftEnd;
+
+  shiftRange.getValues().forEach(function(row, index) {
+    shiftCell = row[0]
+    shiftData = shiftCell.split('-');
+    shiftStart = shiftData[0];
+    shiftEnd = shiftData[1];
+
+    // TODO: Timezones
+    if(currentHour >= shiftStart && currentHour < shiftEnd) {
+      if(isVerboseLogging()) {
+        Logger.log('Set status to Active: ' + shiftCell)
+      }
+    } else {
+      if(isVerboseLogging()) {
+        Logger.log('Set Status to Not Active: ' + shiftCell);
+      }
+    }
+  });
+}
+
 function setConfiguration() {
   const sheetId = "SHEET_ID";
   const spreadsheet = SpreadsheetApp.openById(sheetId);
@@ -455,6 +497,7 @@ function setConfiguration() {
   const username = configurationSheet.getRange('B2').getValue();
   const zendeskToken= configurationSheet.getRange('B3').getValue();
 
+  PropertiesService.getScriptProperties().setProperty('sheetId', sheetId);
   PropertiesService.getScriptProperties().setProperty('mcpSheetId', sheetId);
   PropertiesService.getScriptProperties().setProperty('maxRange', maxRange);
   PropertiesService.getScriptProperties().setProperty('verboseLogging', verboseLogging);
