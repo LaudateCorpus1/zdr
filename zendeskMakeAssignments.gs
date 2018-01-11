@@ -449,9 +449,9 @@ function debug(data) {
   }
 }
 
-// Set if agents are active based on their schedule.
+// Set if agents are active based on their working hours.
 // Configured through the Google Scripts UI to be executed on an hourly basis as a time-driven trigger.
-function setAgentStatus() {
+function setAgentStatuses() {
   setConfiguration();
 
   const sheetId = PropertiesService.getScriptProperties().getProperty('sheetId');
@@ -476,23 +476,35 @@ function setAgentStatus() {
 
   var shiftCell, shiftData, shiftStart, shiftEnd;
   var agentName, agentStatus, agentStatusA1Notation;
+  var rowIndex;
 
   rowsWithData.forEach(function(row, index) {
-    agentName = row[AGENT_NAME_INDEX].trim();
-
     // Skip header row
     if(index === 0) { return }
+
+    rowIndex = index + OFFSET;
+
+    agentName = row[AGENT_NAME_INDEX].trim();
 
     shiftData = row[AGENT_WORKING_HOURS_INDEX].split('-');
     shiftStart = shiftData[0];
     shiftEnd = shiftData[1];
 
-    // TODO: Timezones
-    agentStatus = (currentHour >= shiftStart && currentHour < shiftEnd) ? 'Yes' : 'No';
+    agentNameRange = agentSheet.getRange('B' + rowIndex);
 
-    agentStatusA1Notation = 'A' + (index + OFFSET);
+    // TODO: Timezones
+    if(agentNameRange.getFontLine() === 'line-through') {
+      agentStatus = 'No';
+    } else if(currentHour >= shiftStart && currentHour < shiftEnd) {
+      agentStatus = 'Yes';
+    } else {
+      agentStatus = 'No';
+    }
+
+    agentStatusA1Notation = 'A' + rowIndex;
 
     agentSheet.getRange(agentStatusA1Notation).setValue(agentStatus);
+
     debug('Set ' + agentName + ' status to: ' + agentStatus);
   });
 
