@@ -54,7 +54,6 @@ function makeAssignments() {
   Logger.log("maxRange: " + maxRange);
   //DEBUG//
 
-
   // get the agents into an array
   var aAgentQueue = agentSheet.getRange("A2:G").getValues();
 
@@ -465,32 +464,38 @@ function setAgentStatus() {
 
   debug('Current hour in UTC: ' + currentHour);
 
-  // Get all rows, except the header row
-  const agentStatusRange = agentSheet.getRange('A2:A');
-  const agentNameRange = agentSheet.getRange('B2:B');
-  const agentNameRows = agentNameRange.getValues();
-  const shiftRange = agentSheet.getRange('H2:H');
+  // Compensate for zero offset index
+  const OFFSET = 1;
+
+  const AGENT_STATUS_INDEX = 0;
+  const AGENT_NAME_INDEX = 1;
+  const AGENT_WORKING_HOURS_INDEX = 7;
+
+  const dataRange = agentSheet.getDataRange();
+  const rowsWithData = dataRange.getValues();
 
   var shiftCell, shiftData, shiftStart, shiftEnd;
-  var agentName, agentStatus;
+  var agentName, agentStatus, agentStatusA1Notation;
 
-  shiftRange.getValues().forEach(function(row, index) {
-    shiftCell = row[0]
-    shiftData = shiftCell.split('-');
+  rowsWithData.forEach(function(row, index) {
+    agentName = row[AGENT_NAME_INDEX].trim();
+
+    // Skip header row
+    if(index === 0) { return }
+
+    shiftData = row[AGENT_WORKING_HOURS_INDEX].split('-');
     shiftStart = shiftData[0];
     shiftEnd = shiftData[1];
 
-    agentName = agentNameRows[index][0];
-
     // TODO: Timezones
-    if(currentHour >= shiftStart && currentHour < shiftEnd) {
-      agentStatus = 'Yes';
-    } else {
-      agentStatus = 'No';
-    }
+    agentStatus = (currentHour >= shiftStart && currentHour < shiftEnd) ? 'Yes' : 'No';
 
+    agentStatusA1Notation = 'A' + (index + OFFSET);
+
+    agentSheet.getRange(agentStatusA1Notation).setValue(agentStatus);
     debug('Set ' + agentName + ' status to: ' + agentStatus);
   });
+
 }
 
 function setConfiguration() {
