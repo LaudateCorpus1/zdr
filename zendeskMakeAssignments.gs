@@ -506,13 +506,18 @@ function setAgentStatuses() {
 }
 
 function isAgentActive(startHour, endHour) {
-  return isWeekDay() && isWithinWorkingHours(startHour, endHour);
+  return isESTWeekDay() && isWithinWorkingHours(startHour, endHour);
 }
 
 // startHour and endHour are integers from 0 to 24, inclusive
 function isWithinWorkingHours(startHour, endHour) {
   const now = new Date();
   const currentHour = now.getUTCHours();
+
+  if(isDaylightSavingsTime()) {
+    startHour = startHour + 1
+    endHour = endHour + 1
+  }
 
   if(currentHour === startHour) {
     return true;
@@ -528,15 +533,40 @@ function isWithinWorkingHours(startHour, endHour) {
   }
 }
 
-function isWeekDay() {
-  const SUNDAY = 0;
+function isDaylightSavingsTime() {
+  return PropertiesService.getScriptProperties().getProperty('isDaylightSavingsTime');
+}
+
+function offsetFromUTC() {
+  const EST_OFFSET = -5;
+
+  var offset = EST_OFFSET;
+
+  if(isDaylightSavingsTime()) {
+    offset = offset + 1;
+  }
+
+  return offset;
+}
+
+function isESTWeekDay() {
+  const FRIDAY = 5
   const SATURDAY = 6;
+  const SUNDAY = 0;
 
   const now = new Date();
   const day = now.getUTCDay();
+  const hour = now.getUTCHours();
 
-  // TODO: Boundaries around UTC day vs. Local day
-  // Manual day start and end boundaries????
+  // Correct for ET day vs. UTC day
+  if(hour + offsetFromUTC() < 0) {
+    day = day - 1
+
+    if(day < 0) {
+      day = FRIDAY;
+    }
+  }
+
   return day !== SUNDAY && day !== SATURDAY;
 }
 
@@ -549,7 +579,7 @@ function setConfiguration() {
   const verboseLogging = 'true';
   const subdomain = configurationSheet.getRange('B1').getValue();
   const username = configurationSheet.getRange('B2').getValue();
-  const zendeskToken= configurationSheet.getRange('B3').getValue();
+  const zendeskToken = configurationSheet.getRange('B3').getValue();
 
   PropertiesService.getScriptProperties().setProperty('sheetId', sheetId);
   PropertiesService.getScriptProperties().setProperty('mcpSheetId', sheetId);
@@ -559,6 +589,9 @@ function setConfiguration() {
   PropertiesService.getScriptProperties().setProperty('subdomain', subdomain);
   PropertiesService.getScriptProperties().setProperty('userName', username);
   PropertiesService.getScriptProperties().setProperty('token', zendeskToken);
+
+  const isDaylightSavingsTime = configurationSheet.getRange('B5').getValue();
+  PropertiesService.getScriptProperties().setProperty('isDaylightSavingsTime', isDaylightSavingsTime);
 
   debug('Set Configuration:');
   debug(PropertiesService.getScriptProperties().getProperties());
