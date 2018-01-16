@@ -511,6 +511,9 @@ function isAgentActive(startHour, endHour) {
 
 // startHour and endHour are integers from 0 to 24, inclusive
 function isWithinWorkingHours(startHour, endHour) {
+  startHour = parseInt(startHour, 10);
+  endHour = parseInt(endHour, 10);
+
   const now = new Date();
   const currentHour = now.getUTCHours();
 
