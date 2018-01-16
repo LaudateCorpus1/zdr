@@ -452,8 +452,6 @@ function debug(data) {
 // Set if agents are active based on their working hours.
 // Configured through the Google Scripts UI to be executed as a time-driven trigger.
 function setAgentStatuses() {
-  setConfiguration();
-
   const sheetId = PropertiesService.getScriptProperties().getProperty('sheetId');
   const spreadsheet = SpreadsheetApp.openById(sheetId);
   const agentSheet = spreadsheet.getSheetByName('Support Agents');
@@ -568,6 +566,8 @@ function setConfiguration() {
 
 function main() {
   setConfiguration();
+
+  setAgentStatuses();
 
   makeAssignments();
 }
