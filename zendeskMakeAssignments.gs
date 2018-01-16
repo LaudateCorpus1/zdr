@@ -14,7 +14,7 @@
        including the previously assigned agent
 
    Variables that need to be populated prior to use
-     * [YourSheetID]
+     * SHEET_ID
      * [YourSubDomain]
      * [YourUserName]
      * [YourToken]
@@ -449,8 +449,7 @@ function debug(data) {
   }
 }
 
-// Set if agents are active based on their working hours.
-// Configured through the Google Scripts UI to be executed as a time-driven trigger.
+// Set if agent status to yes or no based on their working hours.
 function setAgentStatuses() {
   const sheetId = PropertiesService.getScriptProperties().getProperty('sheetId');
   const spreadsheet = SpreadsheetApp.openById(sheetId);
@@ -471,7 +470,7 @@ function setAgentStatuses() {
   const dataRange = agentSheet.getDataRange();
   const rowsWithData = dataRange.getValues();
 
-  var shiftCell, shiftData, shiftStart, shiftEnd;
+  var shiftData, shiftStart, shiftEnd;
   var agentName, agentStatus, agentStatusA1Notation;
   var rowIndex;
 
@@ -509,7 +508,7 @@ function isAgentActive(startHour, endHour) {
   return isESTWeekDay() && isWithinWorkingHours(startHour, endHour);
 }
 
-// startHour and endHour are integers from 0 to 24, inclusive
+// startHour and endHour are string representations of integers from 0 to 23
 function isWithinWorkingHours(startHour, endHour) {
   startHour = parseInt(startHour, 10);
   endHour = parseInt(endHour, 10);
@@ -593,7 +592,7 @@ function setConfiguration() {
   PropertiesService.getScriptProperties().setProperty('userName', username);
   PropertiesService.getScriptProperties().setProperty('token', zendeskToken);
 
-  const isDaylightSavingsTime = configurationSheet.getRange('B5').getValue();
+  const isDaylightSavingsTime = configurationSheet.getRange('B5').getValue() === 'yes';
   PropertiesService.getScriptProperties().setProperty('isDaylightSavingsTime', isDaylightSavingsTime);
 
   debug('Set Configuration:');

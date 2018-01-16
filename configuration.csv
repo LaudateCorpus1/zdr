@@ -1,4 +1,5 @@
 subdomain,your-subdomain
 username,username@example.com
 token,your-token
-schedule,9-17,12-20
+working hours,9-17,12-20
+daylight savings time,no
