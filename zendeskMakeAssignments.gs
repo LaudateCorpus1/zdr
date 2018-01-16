@@ -450,7 +450,7 @@ function debug(data) {
 }
 
 // Set if agents are active based on their working hours.
-// Configured through the Google Scripts UI to be executed on an hourly basis as a time-driven trigger.
+// Configured through the Google Scripts UI to be executed as a time-driven trigger.
 function setAgentStatuses() {
   setConfiguration();
 
@@ -459,8 +459,7 @@ function setAgentStatuses() {
   const agentSheet = spreadsheet.getSheetByName('Support Agents');
 
   const currentDate = new Date();
-  // const currentHour = currentDate.getUTCHours();
-  const currentHour = 18;
+  const currentHour = currentDate.getUTCHours();
 
   debug('Current hour in UTC: ' + currentHour);
 
@@ -492,10 +491,9 @@ function setAgentStatuses() {
 
     agentNameRange = agentSheet.getRange('B' + rowIndex);
 
-    // TODO: Timezones
     if(agentNameRange.getFontLine() === 'line-through') {
       agentStatus = 'No';
-    } else if(currentHour >= shiftStart && currentHour < shiftEnd) {
+    } else if(isAgentActive(shiftStart, shiftEnd)) {
       agentStatus = 'Yes';
     } else {
       agentStatus = 'No';
@@ -507,7 +505,41 @@ function setAgentStatuses() {
 
     debug('Set ' + agentName + ' status to: ' + agentStatus);
   });
+}
 
+function isAgentActive(startHour, endHour) {
+  return isWeekDay() && isWithinWorkingHours(startHour, endHour);
+}
+
+// startHour and endHour are integers from 0 to 24, inclusive
+function isWithinWorkingHours(startHour, endHour) {
+  const now = new Date();
+  const currentHour = now.getUTCHours();
+
+  if(currentHour === startHour) {
+    return true;
+  } else if(currentHour === endHour) {
+    return false;
+  } else if(endHour < startHour) {
+    // endHour is the next day
+    endHour = endHour + 24;
+
+    return (currentHour >= startHour && currentHour < endHour);
+  } else {
+    return (currentHour >= startHour && currentHour < endHour);
+  }
+}
+
+function isWeekDay() {
+  const SUNDAY = 0;
+  const SATURDAY = 6;
+
+  const now = new Date();
+  const day = now.getUTCDay();
+
+  // TODO: Boundaries around UTC day vs. Local day
+  // Manual day start and end boundaries????
+  return day !== SUNDAY && day !== SATURDAY;
 }
 
 function setConfiguration() {
@@ -525,16 +557,14 @@ function setConfiguration() {
   PropertiesService.getScriptProperties().setProperty('mcpSheetId', sheetId);
   PropertiesService.getScriptProperties().setProperty('maxRange', maxRange);
   PropertiesService.getScriptProperties().setProperty('verboseLogging', verboseLogging);
+  PropertiesService.getScriptProperties().setProperty('debug', verboseLogging);
   PropertiesService.getScriptProperties().setProperty('subdomain', subdomain);
   PropertiesService.getScriptProperties().setProperty('userName', username);
   PropertiesService.getScriptProperties().setProperty('token', zendeskToken);
 
-  if(isVerboseLogging()) {
-    Logger.log('Set Configuration:');
-    Logger.log(PropertiesService.getScriptProperties().getProperties());
-  }
+  debug('Set Configuration:');
+  debug(PropertiesService.getScriptProperties().getProperties());
 }
-
 
 function main() {
   setConfiguration();

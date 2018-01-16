@@ -15,3 +15,4 @@ By default, the timezone the script runs in is that of the owner of the file. Ho
 
 ## References
 Documentation about the Google Apps Sheets API can be found here: https://developers.google.com/apps-script/reference/spreadsheet/
+Triggers https://developers.google.com/apps-script/guides/triggers/
