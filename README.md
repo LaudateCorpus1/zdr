@@ -7,8 +7,10 @@ This script builds off the work done here: https://support.zendesk.com/hc/en-us/
 
 0. Open up the target spreadsheet and click Tools > Script Editor.
 0. Copy and paste the script in there.
-0. Replace 'SHEET_ID' with your spreadsheet id. This can be found from the URL https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit?ts=123#gid=456
-0. Configure a trigger to run the script automatically with the following parameters: main, Time-driven, Minutes timer, Every 30 minutes.
+0. Replace 'SHEET_ID' with your spreadsheet id in the `setConfiguration` method. This can be found from the URL https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit?ts=123#gid=456
+0. Configure a trigger to run the script automatically.
+    - Open up the script editor and click Edit > Current Project's Triggers > Add a new trigger
+    - Select the following parameters: main, Time-driven, Minutes timer, Every 30 minutes.
 0. Set up your spreadsheet sheets and columns based on the examples in `agents.csv` and `configuration.csv`
 
 ## Configuration

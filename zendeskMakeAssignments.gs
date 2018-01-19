@@ -463,15 +463,17 @@ function setAgentStatuses() {
   // Compensate for zero offset index
   const OFFSET = 1;
 
-  const AGENT_STATUS_INDEX = 0;
   const AGENT_NAME_INDEX = 1;
   const AGENT_WORKING_HOURS_INDEX = 7;
+
+  const AGENT_STATUS_COLUMN = 'A';
+  const AGENT_NAME_COLUMN = 'B';
 
   const dataRange = agentSheet.getDataRange();
   const rowsWithData = dataRange.getValues();
 
   var shiftData, shiftStart, shiftEnd;
-  var agentName, agentStatus, agentStatusA1Notation;
+  var agentName, agentActive;
   var rowIndex;
 
   rowsWithData.forEach(function(row, index) {
@@ -486,26 +488,29 @@ function setAgentStatuses() {
     shiftStart = shiftData[0];
     shiftEnd = shiftData[1];
 
-    agentNameRange = agentSheet.getRange('B' + rowIndex);
+    agentNameRange = agentSheet.getRange(AGENT_NAME_COLUMN + rowIndex);
 
-    if(agentNameRange.getFontLine() === 'line-through') {
-      agentStatus = 'No';
+    if(hasOverride(agentNameRange)) {
+      agentActive = 'No';
     } else if(isAgentActive(shiftStart, shiftEnd)) {
-      agentStatus = 'Yes';
+      agentActive = 'Yes';
     } else {
-      agentStatus = 'No';
+      agentActive = 'No';
     }
 
-    agentStatusA1Notation = 'A' + rowIndex;
+    agentSheet.getRange(AGENT_STATUS_COLUMN + rowIndex).setValue(agentActive);
 
-    agentSheet.getRange(agentStatusA1Notation).setValue(agentStatus);
-
-    debug('Set ' + agentName + ' status to: ' + agentStatus);
+    debug('Set ' + agentName + ' status to: ' + agentActive);
   });
 }
 
 function isAgentActive(startHour, endHour) {
   return isESTWeekDay() && isWithinWorkingHours(startHour, endHour);
+}
+
+// We strike through the agent's name to override them as not active
+function hasOverride(range) {
+  return range.getFontLine() === 'line-through';
 }
 
 // startHour and endHour are string representations of integers from 0 to 23
