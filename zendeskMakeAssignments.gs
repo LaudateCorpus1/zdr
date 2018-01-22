@@ -26,7 +26,7 @@
 
 function makeAssignments() {
   // Pull in Properties
-  var supportTable = getSpreadsheet();
+  var spreadsheet = getSpreadsheet();
 
   var maxRangeProperty = PropertiesService.getScriptProperties().getProperty('maxRange');
   var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
@@ -40,9 +40,12 @@ function makeAssignments() {
   var subdomain = subdomainProperty;
   var userName = userNameProperty;
   var token = tokenProperty;
-  var agentSheet   = supportTable.getSheetByName("Support Agents");
-  var logSheet     = supportTable.getSheetByName("Assignment Log");
-  var debugSheet   = supportTable.getSheetByName("Debug Log");
+
+
+
+  var agentSheet   = spreadsheet.getSheetByName("Support Agents");
+  var logSheet     = spreadsheet.getSheetByName("Assignment Log");
+  var debugSheet   = spreadsheet.getSheetByName("Debug Log");
 
   //DEBUG//
   Logger.log("maxRange: " + maxRange);
@@ -236,7 +239,7 @@ function postTicketAssignment_(subdomain, userName, token, ticketID, agentUserID
 function seekNextAvailableAgentItem_(formType)
 {
   //Pull in Properties
-  var supportTable = getSpreadsheet();
+  var spreadsheet = getSpreadsheet();
 
   var maxRangeProperty = PropertiesService.getScriptProperties().getProperty('maxRange');
   var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
@@ -250,9 +253,9 @@ function seekNextAvailableAgentItem_(formType)
   var subdomain = subdomainProperty;
   var userName = userNameProperty;
   var token = tokenProperty;
-  var agentSheet   = supportTable.getSheetByName("Support Agents");
-  var logSheet     = supportTable.getSheetByName("Assignment Log");
-  var debugSheet   = supportTable.getSheetByName("Debug Log");
+  var agentSheet   = spreadsheet.getSheetByName("Support Agents");
+  var logSheet     = spreadsheet.getSheetByName("Assignment Log");
+  var debugSheet   = spreadsheet.getSheetByName("Debug Log");
 
   //DEBUG//
   Logger.log("Entered in to seekAvailableAgentItem_");
@@ -324,7 +327,7 @@ function seekPreviouslyAssignedAgentItem_(aAgentQueue)
 function parseFormType_(tags)
 {
   // Pull in Properties
-  var supportTable = getSpreadsheet();
+  var spreadsheet = getSpreadsheet();
 
   var maxRangeProperty = PropertiesService.getScriptProperties().getProperty('maxRange');
   var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
@@ -338,9 +341,9 @@ function parseFormType_(tags)
   var subdomain = subdomainProperty;
   var userName = userNameProperty;
   var token = tokenProperty;
-  var agentSheet   = supportTable.getSheetByName("Support Agents");
-  var logSheet     = supportTable.getSheetByName("Assignment Log");
-  var debugSheet   = supportTable.getSheetByName("Debug Log");
+  var agentSheet   = spreadsheet.getSheetByName("Support Agents");
+  var logSheet     = spreadsheet.getSheetByName("Assignment Log");
+  var debugSheet   = spreadsheet.getSheetByName("Debug Log");
 
   //DEBUG//
   Logger.log("Entered in to parseFormType_");
@@ -393,7 +396,7 @@ function testGetFormColumn()
 function getFormColumn_(formType)
 {
   // Pull in Properties
-  var supportTable = getSpreadsheet();
+  var spreadsheet = getSpreadsheet();
 
   var maxRangeProperty = PropertiesService.getScriptProperties().getProperty('maxRange');
   var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
@@ -407,9 +410,9 @@ function getFormColumn_(formType)
   var subdomain = subdomainProperty;
   var userName = userNameProperty;
   var token = tokenProperty;
-  var agentSheet   = supportTable.getSheetByName("Support Agents");
-  var logSheet     = supportTable.getSheetByName("Assignment Log");
-  var debugSheet   = supportTable.getSheetByName("Debug Log");
+  var agentSheet   = spreadsheet.getSheetByName("Support Agents");
+  var logSheet     = spreadsheet.getSheetByName("Assignment Log");
+  var debugSheet   = spreadsheet.getSheetByName("Debug Log");
 
   //DEBUG//
   Logger.log("Entered in to parseFormType_");
