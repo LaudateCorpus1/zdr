@@ -6,7 +6,6 @@
 */
 
 function assignTickets() {
-  // Pull in Properties
   const spreadsheet = getSpreadsheet();
 
   const agentSheet  = spreadsheet.getSheetByName("Support Agents");
@@ -24,24 +23,22 @@ function assignTickets() {
   var aAgentQueue = agentSheet.getRange("A2:G").getValues();
 
   // get the unassigned (recent) ticket list using search api
-  var searchTickets = seekOpenTickets(subdomain, userName, token);
+  var openTickets = fetchOpenTickets(subdomain, userName, token);
 
-  var results = Utilities.jsonParse(searchTickets);
-
-  debugSheet.getRange("A2").setValue(results.results);
+  debugSheet.getRange("A2").setValue(openTickets.results);
 
   //for (var i = 0; i < results.results.length; i++)
   //Change to only assign a max of 10 tickets per pass
-  var j = results.results.length;
+  var j = openTickets.results.length;
   if (j > 10) {
     j = 10;
   }
   for (var i = 0; i < j; i++)
   {
 
-    var ticketID = results.results[i].id;
-    var tags = results.results[i].tags.toString();
-    var assigneeID = results.results[i].assignee_id;
+    var ticketID = openTickets.results[i].id;
+    var tags = openTickets.results[i].tags.toString();
+    var assigneeID = openTickets.results[i].assignee_id;
 
     // update log table
     if (isDebugMode())
@@ -129,32 +126,27 @@ function assignTickets() {
 
 }
 
-function seekOpenTickets(subdomain, userName, token)
-{
-
-  //DEBUG//
-  Logger.log("Entered in to seekOpenTickets");
-  Logger.log("Parameters: " + subdomain + ", " + userName + ", " + token);
-  //DEBUG//
-
-  token = userName + "/token:" + token;
-  var encode = Utilities.base64Encode(token);
-
-  var options =
-  {
+function fetchOpenTickets(subdomain, userName, token) {
+  // Add additional filters to reduce the result set and execution time
+  // by including tags and ordering by oldest first
+  const searchUrl = "https://" + subdomain + ".zendesk.com/api/v2/search.json?" +
+    "query=type:ticket status:new assignee:none tags:draw_an_ace order_by:created sort:asc";
+  const authToken = userName + "/token:" + token;
+  const encodedAuthToken = Utilities.base64Encode(authToken);
+  const options = {
     "method" : "get",
     "headers" :
     {
       "Content-type":"application/xml",
-      "Authorization":  "Basic " + encode
+      "Authorization":  "Basic " + encodedAuthToken
     }
   };
 
-  // add additional filters to reduce the result set and execution time including tags and ordering by oldest first
-  var result = UrlFetchApp.fetch("https://" + subdomain + ".zendesk.com/api/v2/search.json?query=type:ticket status:new assignee:none tags:draw_an_ace order_by:created sort:asc", options);
+  debug('Fetch open tickets for: ' + subdomain + ', ' + userName + ', ' + authToken);
 
-  return(result);
+  var response = UrlFetchApp.fetch(searchUrl, options);
 
+  return Utilities.jsonParse(response);
 }
 
 function postTicketAssignment_(subdomain, userName, token, ticketID, agentUserID)
