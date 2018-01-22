@@ -1,27 +1,8 @@
 /*
-   Zendesk Roulette - Rob Baker
+   For usage instructions, see README.md
 
-   Parts of Code Copyright (c) 2013 by BetterCloud, Micheal Stone - ALL RIGHTS RESERVED
-   *** NOT FOR DISTRIBUTION ***
-
-   Rob Baker changes
-     * Added Properties so that each function could be called independently
-     * Added a main function so script can be manually run
-     * Added search filter changes to limit results to only tags of interest and oldest tickets first
-       to avoid hitting script processing time limits
-     * Limited assignment to a maximum of 10 tickets per pass to avoid the entire queue from being assigned at once
-     * Fixed an issue where the last agent assigned would continue to be pushed tickets if there were no active agents
-       including the previously assigned agent
-
-   Variables that need to be populated prior to use
-     * SHEET_ID
-     * [YourSubDomain]
-     * [YourUserName]
-     * [YourToken]
-     * [YourTags]
-
-  For more information please refer to the Zendesk Community Thread at:
-    https://support.zendesk.com/hc/en-us/community/posts/203458976-Round-robin-ticket-assignment
+   Parts of Code Copyright (c) 2013 by BetterCloud, Michael Stone
+     All Rights Reserved, Not for distribution.
 */
 
 function assignTickets() {
@@ -46,7 +27,6 @@ function assignTickets() {
   var searchTickets = seekOpenTickets(subdomain, userName, token);
 
   var results = Utilities.jsonParse(searchTickets);
-
 
   debugSheet.getRange("A2").setValue(results.results);
 

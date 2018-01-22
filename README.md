@@ -1,6 +1,10 @@
 ## About
 This script is used to manage rotations within Zendesk.
 
+-  Search filter changes to limit results to only tags of interest and oldest tickets first to avoid hitting script processing time limits
+- Limited assignment to a maximum of 10 tickets per pass to avoid the entire queue from being assigned at once
+- Fixed an issue where the last agent assigned would continue to be pushed tickets if there were no active agents including the previously assigned agent
+
 This script builds off the work done here: https://support.zendesk.com/hc/en-us/community/posts/203458976-Round-robin-ticket-assignment
 
 Agent Status will automatically be set to `yes` when:
