@@ -26,30 +26,18 @@
 
 function assignTickets() {
   // Pull in Properties
-  var spreadsheet = getSpreadsheet();
+  const spreadsheet = getSpreadsheet();
 
-  var maxRangeProperty = PropertiesService.getScriptProperties().getProperty('maxRange');
-  var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
-  var subdomainProperty = PropertiesService.getScriptProperties().getProperty('subdomain');
-  var userNameProperty = PropertiesService.getScriptProperties().getProperty('userName');
-  var tokenProperty = PropertiesService.getScriptProperties().getProperty('token');
+  const agentSheet  = spreadsheet.getSheetByName("Support Agents");
+  const logSheet = spreadsheet.getSheetByName("Assignment Log");
+  const debugSheet = spreadsheet.getSheetByName("Debug Log");
 
-  // Initialize Variables and Sheet References
-  var maxRange = maxRangeProperty; // starts at column 5 goes out to 10 (5 possible formtype columns) (IMPORTANT: Look at line 215 (col J range)
-  var verboseLogging = verboseLoggingProperty; // set to true for minute-by-minute logging
-  var subdomain = subdomainProperty;
-  var userName = userNameProperty;
-  var token = tokenProperty;
+  // starts at column 5 goes out to 10 (5 possible formtype columns) (IMPORTANT: Look at line 215 (col J range)
+  var maxRange = PropertiesService.getScriptProperties().getProperty('maxRange');
 
-
-
-  var agentSheet   = spreadsheet.getSheetByName("Support Agents");
-  var logSheet     = spreadsheet.getSheetByName("Assignment Log");
-  var debugSheet   = spreadsheet.getSheetByName("Debug Log");
-
-  //DEBUG//
-  Logger.log("maxRange: " + maxRange);
-  //DEBUG//
+  var subdomain = PropertiesService.getScriptProperties().getProperty('subdomain');
+  var userName = PropertiesService.getScriptProperties().getProperty('userName');
+  var token = PropertiesService.getScriptProperties().getProperty('token');
 
   // get the agents into an array
   var aAgentQueue = agentSheet.getRange("A2:G").getValues();
@@ -59,10 +47,8 @@ function assignTickets() {
 
   var results = Utilities.jsonParse(searchTickets);
 
-  //DEBUG//
-  //debugSheet.insertRowBefore(2);
+
   debugSheet.getRange("A2").setValue(results.results);
-  //DEBUG//
 
   //for (var i = 0; i < results.results.length; i++)
   //Change to only assign a max of 10 tickets per pass
@@ -78,7 +64,7 @@ function assignTickets() {
     var assigneeID = results.results[i].assignee_id;
 
     // update log table
-    if (verboseLogging == true)
+    if (isDebugMode())
     {
       logSheet.insertRowBefore(2);
       logSheet.getRange("A2").setValue(Date());
@@ -93,7 +79,7 @@ function assignTickets() {
     if (assigneeID == null)
     {
 
-      if (verboseLogging == true)
+      if (isDebugMode())
       {
         // ???
       } else {
@@ -253,9 +239,9 @@ function seekNextAvailableAgentItem_(formType)
   var subdomain = subdomainProperty;
   var userName = userNameProperty;
   var token = tokenProperty;
-  var agentSheet   = spreadsheet.getSheetByName("Support Agents");
-  var logSheet     = spreadsheet.getSheetByName("Assignment Log");
-  var debugSheet   = spreadsheet.getSheetByName("Debug Log");
+  const agentSheet   = spreadsheet.getSheetByName("Support Agents");
+  const logSheet     = spreadsheet.getSheetByName("Assignment Log");
+  const debugSheet   = spreadsheet.getSheetByName("Debug Log");
 
   //DEBUG//
   Logger.log("Entered in to seekAvailableAgentItem_");
@@ -585,7 +571,7 @@ function getSpreadsheet() {
 function setConfiguration() {
   const spreadsheet = getSpreadsheet();
 
-  const configurationSheet = spreadsheet.getSheetByName('Configuration')
+  const configurationSheet = spreadsheet.getSheetByName('Configuration');
 
   const subdomain = configurationSheet.getRange('B1').getValue();
   PropertiesService.getScriptProperties().setProperty('subdomain', subdomain);
