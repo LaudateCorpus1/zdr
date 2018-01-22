@@ -26,7 +26,8 @@
 
 function makeAssignments() {
   // Pull in Properties
-  var mcpSheetIdProperty = PropertiesService.getScriptProperties().getProperty('mcpSheetId');
+  var supportTable = getSpreadsheet();
+
   var maxRangeProperty = PropertiesService.getScriptProperties().getProperty('maxRange');
   var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
   var subdomainProperty = PropertiesService.getScriptProperties().getProperty('subdomain');
@@ -36,11 +37,9 @@ function makeAssignments() {
   // Initialize Variables and Sheet References
   var maxRange = maxRangeProperty; // starts at column 5 goes out to 10 (5 possible formtype columns) (IMPORTANT: Look at line 215 (col J range)
   var verboseLogging = verboseLoggingProperty; // set to true for minute-by-minute logging
-  var mcpSheetId = mcpSheetIdProperty;
   var subdomain = subdomainProperty;
   var userName = userNameProperty;
   var token = tokenProperty;
-  var supportTable = SpreadsheetApp.openById(mcpSheetIdProperty);
   var agentSheet   = supportTable.getSheetByName("Support Agents");
   var logSheet     = supportTable.getSheetByName("Assignment Log");
   var debugSheet   = supportTable.getSheetByName("Debug Log");
@@ -236,9 +235,9 @@ function postTicketAssignment_(subdomain, userName, token, ticketID, agentUserID
 
 function seekNextAvailableAgentItem_(formType)
 {
-
   //Pull in Properties
-  var mcpSheetIdProperty = PropertiesService.getScriptProperties().getProperty('mcpSheetId');
+  var supportTable = getSpreadsheet();
+
   var maxRangeProperty = PropertiesService.getScriptProperties().getProperty('maxRange');
   var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
   var subdomainProperty = PropertiesService.getScriptProperties().getProperty('subdomain');
@@ -248,11 +247,9 @@ function seekNextAvailableAgentItem_(formType)
   // Initialize Variables and Sheet References
   var maxRange = maxRangeProperty; // starts at column 5 goes out to 10 (5 possible formtype columns) (IMPORTANT: Look at line 215 (col J range)
   var verboseLogging = verboseLoggingProperty; // set to true for minute-by-minute logging
-  var mcpSheetId = mcpSheetIdProperty;
   var subdomain = subdomainProperty;
   var userName = userNameProperty;
   var token = tokenProperty;
-  var supportTable = SpreadsheetApp.openById(mcpSheetIdProperty);
   var agentSheet   = supportTable.getSheetByName("Support Agents");
   var logSheet     = supportTable.getSheetByName("Assignment Log");
   var debugSheet   = supportTable.getSheetByName("Debug Log");
@@ -326,9 +323,9 @@ function seekPreviouslyAssignedAgentItem_(aAgentQueue)
 
 function parseFormType_(tags)
 {
-
   // Pull in Properties
-  var mcpSheetIdProperty = PropertiesService.getScriptProperties().getProperty('mcpSheetId');
+  var supportTable = getSpreadsheet();
+
   var maxRangeProperty = PropertiesService.getScriptProperties().getProperty('maxRange');
   var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
   var subdomainProperty = PropertiesService.getScriptProperties().getProperty('subdomain');
@@ -338,11 +335,9 @@ function parseFormType_(tags)
   // Initialize Variables and Sheet References
   var maxRange = maxRangeProperty; // starts at column 5 goes out to 10 (5 possible formtype columns) (IMPORTANT: Look at line 215 (col J range)
   var verboseLogging = verboseLoggingProperty; // set to true for minute-by-minute logging
-  var mcpSheetId = mcpSheetIdProperty;
   var subdomain = subdomainProperty;
   var userName = userNameProperty;
   var token = tokenProperty;
-  var supportTable = SpreadsheetApp.openById(mcpSheetIdProperty);
   var agentSheet   = supportTable.getSheetByName("Support Agents");
   var logSheet     = supportTable.getSheetByName("Assignment Log");
   var debugSheet   = supportTable.getSheetByName("Debug Log");
@@ -398,7 +393,8 @@ function testGetFormColumn()
 function getFormColumn_(formType)
 {
   // Pull in Properties
-  var mcpSheetIdProperty = PropertiesService.getScriptProperties().getProperty('mcpSheetId');
+  var supportTable = getSpreadsheet();
+
   var maxRangeProperty = PropertiesService.getScriptProperties().getProperty('maxRange');
   var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
   var subdomainProperty = PropertiesService.getScriptProperties().getProperty('subdomain');
@@ -408,11 +404,9 @@ function getFormColumn_(formType)
   // Initialize Variables and Sheet References
   var maxRange = maxRangeProperty; // starts at column 5 goes out to 10 (5 possible formtype columns) (IMPORTANT: Look at line 215 (col J range)
   var verboseLogging = verboseLoggingProperty; // set to true for minute-by-minute logging
-  var mcpSheetId = mcpSheetIdProperty;
   var subdomain = subdomainProperty;
   var userName = userNameProperty;
   var token = tokenProperty;
-  var supportTable = SpreadsheetApp.openById(mcpSheetIdProperty);
   var agentSheet   = supportTable.getSheetByName("Support Agents");
   var logSheet     = supportTable.getSheetByName("Assignment Log");
   var debugSheet   = supportTable.getSheetByName("Debug Log");
@@ -586,9 +580,6 @@ function getSpreadsheet() {
 
 function setConfiguration() {
   const spreadsheet = getSpreadsheet();
-
-  const sheetId = spreadsheet.getId();
-  PropertiesService.getScriptProperties().setProperty('mcpSheetId', sheetId);
 
   const configurationSheet = spreadsheet.getSheetByName('Configuration')
 
