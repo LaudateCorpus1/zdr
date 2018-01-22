@@ -12,23 +12,17 @@ function assignTickets() {
   const logSheet = spreadsheet.getSheetByName("Assignment Log");
   const debugSheet = spreadsheet.getSheetByName("Debug Log");
 
-  const MAX_TICKETS_PER_AGENT = getMaxTicketsPerAgent();
-
   // Get open tickets using Zendesk API
   const openTickets = fetchOpenTickets();
-  debugSheet.getRange("A2").setValue(openTickets.results);
-
-  // Limit the number of tickets assigned to at most MAX_TICKETS_PER_AGENT
-  const assignableOpenTickets = openTickets.results.slice(0, MAX_TICKETS_PER_AGENT);
 
   // get the agents into an array
   var aAgentQueue = agentSheet.getRange("A2:G").getValues();
 
   var ticketId, tags, assigneeId;
-  for (var i = 0; i < assignableOpenTickets.length; i++) {
-    ticketId = assignableOpenTickets[i].id;
-    tags = assignableOpenTickets[i].tags.toString();
-    assigneeId = assignableOpenTickets[i].assignee_id;
+  for (var i = 0; i < openTickets.length; i++) {
+    ticketId = openTickets[i].id;
+    tags = openTickets[i].tags.toString();
+    assigneeId = openTickets[i].assignee_id;
 
     // Update log sheet with ticket details
     if (isDebugMode()) {
@@ -103,10 +97,7 @@ function assignTickets() {
       // not an assignable form type, no action taken for this ticket, update log sheet
       logSheet.getRange("F2").setValue("Not Valid Form Type");
     }
-
-
   }
-
 }
 
 function fetchOpenTickets() {
@@ -130,9 +121,14 @@ function fetchOpenTickets() {
 
   debug('Fetch open tickets for: ' + subdomain + ', ' + userName + ', ' + authToken);
 
-  var response = UrlFetchApp.fetch(searchUrl, options);
+  const response = UrlFetchApp.fetch(searchUrl, options);
+  const jsonResponse = Utilities.jsonParse(response);
+  const MAX_TICKETS_PER_AGENT = getMaxTicketsPerAgent();
+  const maxOpenTickets = jsonResponse.results.slice(0, MAX_TICKETS_PER_AGENT);
 
-  return Utilities.jsonParse(response);
+  getDebugSheet().getRange("A2").setValue(maxOpenTickets);
+
+  return maxOpenTickets;
 }
 
 function postTicketAssignment_(subdomain, userName, token, ticketId, agentUserId) {
@@ -505,6 +501,10 @@ function getUsername() {
 
 function getToken() {
   return PropertiesService.getScriptProperties().getProperty('token');
+}
+
+function getDebugSheet() {
+  return getSpreadsheet().getSheetByName('Debug Log');
 }
 
 function setConfiguration() {
