@@ -147,79 +147,56 @@ function postTicketAssignment_(subdomain, userName, token, ticketId, agentUserId
 
 function seekNextAvailableAgentItem_(formType) {
   const spreadsheet = getSpreadsheet();
-
-  var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
-  var subdomainProperty = PropertiesService.getScriptProperties().getProperty('subdomain');
-  var userNameProperty = PropertiesService.getScriptProperties().getProperty('userName');
-  var tokenProperty = PropertiesService.getScriptProperties().getProperty('token');
-
-  // Initialize Variables and Sheet References
-  var verboseLogging = verboseLoggingProperty; // set to true for minute-by-minute logging
-  var subdomain = subdomainProperty;
-  var userName = userNameProperty;
-  var token = tokenProperty;
-
-  const agentSheet   = spreadsheet.getSheetByName("Support Agents");
-  const logSheet     = spreadsheet.getSheetByName("Assignment Log");
-  const debugSheet   = spreadsheet.getSheetByName("Debug Log");
-
-  // get the column number for the formType
-  var formColumn = getFormColumn_(formType);
-  debug("Form Type: " + formType + "   Form column: " + formColumn);
+  const agentSheet = spreadsheet.getSheetByName("Support Agents");
+  const formColumn = getFormColumn_(formType);
 
   // get the agents into an array
+  // scoped to col J for a maxRange of 10, but needs to be updated if more than 12
   // FIXME: Column should reflect what is configured by maxTicketsPerAgent
   // Ideally, this would be dynamic
-  var aAgentQueue = agentSheet.getRange("A2:J").getValues(); // scoped to col J for a maxRange of 10, but needs to be updated if more than 12
+  const aAgentQueue = agentSheet.getRange("A2:J").getValues();
 
   // locate the previous agent assigned
-  var previouslyAssignedAgentItem = seekPreviouslyAssignedAgentItem_(aAgentQueue);
-  Logger.log("Previously assigned agent item: " + previouslyAssignedAgentItem);
+  const previouslyAssignedAgentItem = seekPreviouslyAssignedAgentItem_(aAgentQueue);
 
   // if the previously assigned agent is in the last row, start at the top and search for someone other than the previously assigned agent
-  if ((previouslyAssignedAgentItem == aAgentQueue.length) || (previouslyAssignedAgentItem == 0))
-  {
+  if ((previouslyAssignedAgentItem == aAgentQueue.length) || (previouslyAssignedAgentItem == 0)) {
     // start at the top - find the next active agent
-    for (var j = 0; j < aAgentQueue.length; j++)
-    {
-      if ((aAgentQueue[j][0] == "Yes") && (aAgentQueue[j][3] != "x") && (aAgentQueue[j][formColumn] == "x"))
-      {
-        return(j);
+    for (var j = 0; j < aAgentQueue.length; j++) {
+      if ((aAgentQueue[j][0] == "Yes") && (aAgentQueue[j][3] != "x") && (aAgentQueue[j][formColumn] == "x")) {
+        return j;
       }
     }
     return(previouslyAssignedAgentItem);
   } else {
     // see if any agents below the previously assigned agent are able to handle this form type
     // search to the bottom of the list
-    for (var j = (previouslyAssignedAgentItem + 1); j < aAgentQueue.length; j++)
-    {
-      if ((aAgentQueue[j][0] == "Yes") && (aAgentQueue[j][3] != "x") && (aAgentQueue[j][formColumn] == "x"))
-      {
-        return(j);
+    for(var j = (previouslyAssignedAgentItem + 1); j < aAgentQueue.length; j++) {
+      if((aAgentQueue[j][0] == "Yes") && (aAgentQueue[j][3] != "x") && (aAgentQueue[j][formColumn] == "x")) {
+        return j;
       }
     }
     // if not found, start over at the top of the list
-    for (var j = 0; j < aAgentQueue.length; j++)
-    {
-      if ((aAgentQueue[j][0] == "Yes") && (aAgentQueue[j][3] != "x") && (aAgentQueue[j][formColumn] == "x"))
-      {
-        return(j);
+    for(var j = 0; j < aAgentQueue.length; j++) {
+      if ((aAgentQueue[j][0] == "Yes") && (aAgentQueue[j][3] != "x") && (aAgentQueue[j][formColumn] == "x")) {
+        return j;
       }
     }
   }
-  //return(previouslyAssignedAgentItem);
-  //this prevented ZDR from being turned off during non-business hours
+
   return null;
 }
 
-function seekPreviouslyAssignedAgentItem_(aAgentQueue) {
-  for (var i = 0; i < aAgentQueue.length; i++) {
-    if (aAgentQueue[i][3] == "x") {
-      return(i);
+function seekPreviouslyAssignedAgentItem_(agents) {
+  const QUEUE_COLUMN = 3;
+
+  for(var rowIndex = 0; i < agents.length; i++) {
+    if(agents[rowIndex][QUEUE_COLUMN] === "x") {
+      return rowIndex;
     }
   }
 
-  return(0);
+  return 0;
 }
 
 function parseFormType_(tags) {
