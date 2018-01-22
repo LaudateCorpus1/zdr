@@ -25,12 +25,7 @@
 */
 
 function makeAssignments() {
-
-  //DEBUG//
-  Logger.log("Entered in to makeAssignments");
-  //DEBUG//
-
-  //Pull in Properties
+  // Pull in Properties
   var mcpSheetIdProperty = PropertiesService.getScriptProperties().getProperty('mcpSheetId');
   var maxRangeProperty = PropertiesService.getScriptProperties().getProperty('maxRange');
   var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
@@ -455,9 +450,7 @@ function getCurrentUtcHour() {
 
 // Set if agent status to yes or no based on their working hours.
 function setAgentStatuses() {
-  const sheetId = PropertiesService.getScriptProperties().getProperty('sheetId');
-  const spreadsheet = SpreadsheetApp.openById(sheetId);
-  const agentSheet = spreadsheet.getSheetByName('Support Agents');
+  const agentSheet = getSpreadsheet().getSheetByName('Support Agents');
 
   // Compensate for zero offset index
   const OFFSET = 1;
@@ -579,25 +572,41 @@ function isESTWeekDay() {
   return day !== SUNDAY && day !== SATURDAY;
 }
 
-function setConfiguration() {
+function setAgentsTicketCount() {
+  // TODO: Make request to Zendesk api
+  // TODO: Update spreadsheet column with values
+}
+
+// Getters
+function getSpreadsheet() {
   const sheetId = "SHEET_ID";
-  const spreadsheet = SpreadsheetApp.openById(sheetId);
+
+  return SpreadsheetApp.openById(sheetId);
+}
+
+function setConfiguration() {
+  const spreadsheet = getSpreadsheet();
+
+  const sheetId = spreadsheet.getId();
+  PropertiesService.getScriptProperties().setProperty('mcpSheetId', sheetId);
+
   const configurationSheet = spreadsheet.getSheetByName('Configuration')
 
-  const maxRange = '10';
-  const verboseLogging = 'true';
   const subdomain = configurationSheet.getRange('B1').getValue();
-  const username = configurationSheet.getRange('B2').getValue();
-  const zendeskToken = configurationSheet.getRange('B3').getValue();
+  PropertiesService.getScriptProperties().setProperty('subdomain', subdomain);
 
-  PropertiesService.getScriptProperties().setProperty('sheetId', sheetId);
-  PropertiesService.getScriptProperties().setProperty('mcpSheetId', sheetId);
+  const username = configurationSheet.getRange('B2').getValue();
+  PropertiesService.getScriptProperties().setProperty('userName', username);
+
+  const zendeskToken = configurationSheet.getRange('B3').getValue();
+  PropertiesService.getScriptProperties().setProperty('token', zendeskToken);
+
+  const maxRange = '10';
   PropertiesService.getScriptProperties().setProperty('maxRange', maxRange);
+
+  const verboseLogging = 'true';
   PropertiesService.getScriptProperties().setProperty('verboseLogging', verboseLogging);
   PropertiesService.getScriptProperties().setProperty('debug', verboseLogging);
-  PropertiesService.getScriptProperties().setProperty('subdomain', subdomain);
-  PropertiesService.getScriptProperties().setProperty('userName', username);
-  PropertiesService.getScriptProperties().setProperty('token', zendeskToken);
 
   const isDaylightSavingsTime = configurationSheet.getRange('B5').getValue() === 'yes';
   PropertiesService.getScriptProperties().setProperty('isDaylightSavingsTime', isDaylightSavingsTime);
@@ -610,6 +619,8 @@ function main() {
   setConfiguration();
 
   setAgentStatuses();
+
+  setAgentsTicketCount();
 
   makeAssignments();
 }
