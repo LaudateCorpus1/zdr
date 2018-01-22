@@ -14,19 +14,15 @@ function assignTickets() {
 
   const MAX_TICKETS_PER_AGENT = getMaxTicketsPerAgent();
 
-  var subdomain = PropertiesService.getScriptProperties().getProperty('subdomain');
-  var userName = PropertiesService.getScriptProperties().getProperty('userName');
-  var token = PropertiesService.getScriptProperties().getProperty('token');
-
-  // get the agents into an array
-  var aAgentQueue = agentSheet.getRange("A2:G").getValues();
-
   // Get open tickets using Zendesk API
-  const openTickets = fetchOpenTickets(subdomain, userName, token);
+  const openTickets = fetchOpenTickets();
   debugSheet.getRange("A2").setValue(openTickets.results);
 
   // Limit the number of tickets assigned to at most MAX_TICKETS_PER_AGENT
   const assignableOpenTickets = openTickets.results.slice(0, MAX_TICKETS_PER_AGENT);
+
+  // get the agents into an array
+  var aAgentQueue = agentSheet.getRange("A2:G").getValues();
 
   var ticketId, tags, assigneeId;
   for (var i = 0; i < assignableOpenTickets.length; i++) {
@@ -113,7 +109,10 @@ function assignTickets() {
 
 }
 
-function fetchOpenTickets(subdomain, userName, token) {
+function fetchOpenTickets() {
+  const subdomain = getSubdomain();
+  const username = getUsername();
+  const token = getToken();
   // Add additional filters to reduce the result set and execution time
   // by including tags and ordering by oldest first
   const searchUrl = "https://" + subdomain + ".zendesk.com/api/v2/search.json?" +
@@ -496,6 +495,18 @@ function getMaxTicketsPerAgent() {
   return parseInt(maxTicketsPerAgent, 10);
 }
 
+function getSubdomain() {
+  return PropertiesService.getScriptProperties().getProperty('subdomain');
+}
+
+function getUsername() {
+  return PropertiesService.getScriptProperties().getProperty('username');
+}
+
+function getToken() {
+  return PropertiesService.getScriptProperties().getProperty('token');
+}
+
 function setConfiguration() {
   const spreadsheet = getSpreadsheet();
 
@@ -506,6 +517,7 @@ function setConfiguration() {
 
   const username = configurationSheet.getRange('B2').getValue();
   PropertiesService.getScriptProperties().setProperty('userName', username);
+  PropertiesService.getScriptProperties().setProperty('username', username);
 
   const zendeskToken = configurationSheet.getRange('B3').getValue();
   PropertiesService.getScriptProperties().setProperty('token', zendeskToken);
