@@ -40,18 +40,14 @@ function assignTickets() {
     // FIXME: Is this ever the case? We filter by assignee:none
     // Ticket is already assigned, don't assign this ticket.
     if (assigneeId) { continue }
-    // Skip ticket is formType is invalid
-    if(!!formType) { continue }
+    // Skip ticket is formType is not available
+    if(!formType) { continue }
 
     // get the currently available agent in the queue
     var agentAvailableItemNumber = seekNextAvailableAgentItem_(formType);
 
-    if (agentAvailableItemNumber == -1) {
-      //don't attempt to post if there are no available agents
-      debug("No Active Agents, exiting script.");
-
-      return(-1);
-    }
+    // No agents available. Exit script.
+    if(!agentAvailableItemNumber) { return }
 
     var assigneeName = aAgentQueue[agentAvailableItemNumber][1];
     var agentUserID = aAgentQueue[agentAvailableItemNumber][2];
@@ -210,14 +206,10 @@ function seekNextAvailableAgentItem_(formType) {
         return(j);
       }
     }
-    // if nothing else found, stay on the current againt available
-    //return(previouslyAssignedAgentItem);
-    // this prevented ZDR from being turned off during non-business hours
-    return(-1);
   }
   //return(previouslyAssignedAgentItem);
   //this prevented ZDR from being turned off during non-business hours
-  return(-1);
+  return null;
 }
 
 function seekPreviouslyAssignedAgentItem_(aAgentQueue) {
