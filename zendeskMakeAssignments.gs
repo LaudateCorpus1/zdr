@@ -12,12 +12,11 @@ function assignTickets() {
   const logSheet = spreadsheet.getSheetByName("Assignment Log");
   const debugSheet = spreadsheet.getSheetByName("Debug Log");
 
-  // starts at column 5 goes out to 10 (5 possible formtype columns) (IMPORTANT: Look at line 215 (col J range)
-  var maxRange = PropertiesService.getScriptProperties().getProperty('maxRange');
-
   var subdomain = PropertiesService.getScriptProperties().getProperty('subdomain');
   var userName = PropertiesService.getScriptProperties().getProperty('userName');
   var token = PropertiesService.getScriptProperties().getProperty('token');
+
+  const MAX_TICKETS_PER_AGENT = getMaxTicketsPerAgent();
 
   // get the agents into an array
   var aAgentQueue = agentSheet.getRange("A2:G").getValues();
@@ -27,11 +26,9 @@ function assignTickets() {
 
   debugSheet.getRange("A2").setValue(openTickets.results);
 
-  //for (var i = 0; i < results.results.length; i++)
-  //Change to only assign a max of 10 tickets per pass
   var j = openTickets.results.length;
-  if (j > 10) {
-    j = 10;
+  if (j > MAX_TICKETS_PER_AGENT) {
+    j = MAX_TICKETS_PER_AGENT;
   }
   for (var i = 0; i < j; i++)
   {
@@ -79,9 +76,8 @@ function assignTickets() {
         var agentAvailableItemNumber = seekNextAvailableAgentItem_(formType);
         if (agentAvailableItemNumber == -1) {
           //don't attempt to post if there are no available agents
-          //DEBUG//
-          Logger.log("No Active Agents, exiting script.");
-          //DEBUG//
+          debug("No Active Agents, exiting script.");
+
           return(-1);
         }
         var assigneeName = aAgentQueue[agentAvailableItemNumber][1];
@@ -151,17 +147,14 @@ function fetchOpenTickets(subdomain, userName, token) {
 
 function postTicketAssignment_(subdomain, userName, token, ticketID, agentUserID)
 {
-
   token = userName + "/token:" + token;
   var encode = Utilities.base64Encode(token);
 
-  var payload =
-  {
-    "ticket":
-    {
-     "assignee_id" : parseInt(agentUserID)
-   }
- };
+  var payload = {
+    "ticket": {
+      "assignee_id" : parseInt(agentUserID)
+    }
+   };
 
  payload = JSON.stringify(payload);
 
@@ -194,36 +187,31 @@ function postTicketAssignment_(subdomain, userName, token, ticketID, agentUserID
 
 }
 
-function seekNextAvailableAgentItem_(formType)
-{
-  //Pull in Properties
-  var spreadsheet = getSpreadsheet();
+function seekNextAvailableAgentItem_(formType) {
+  const spreadsheet = getSpreadsheet();
 
-  var maxRangeProperty = PropertiesService.getScriptProperties().getProperty('maxRange');
   var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
   var subdomainProperty = PropertiesService.getScriptProperties().getProperty('subdomain');
   var userNameProperty = PropertiesService.getScriptProperties().getProperty('userName');
   var tokenProperty = PropertiesService.getScriptProperties().getProperty('token');
 
   // Initialize Variables and Sheet References
-  var maxRange = maxRangeProperty; // starts at column 5 goes out to 10 (5 possible formtype columns) (IMPORTANT: Look at line 215 (col J range)
   var verboseLogging = verboseLoggingProperty; // set to true for minute-by-minute logging
   var subdomain = subdomainProperty;
   var userName = userNameProperty;
   var token = tokenProperty;
+
   const agentSheet   = spreadsheet.getSheetByName("Support Agents");
   const logSheet     = spreadsheet.getSheetByName("Assignment Log");
   const debugSheet   = spreadsheet.getSheetByName("Debug Log");
 
-  //DEBUG//
-  Logger.log("Entered in to seekAvailableAgentItem_");
-  //DEBUG//
-
   // get the column number for the formType
   var formColumn = getFormColumn_(formType);
-  Logger.log("Form Type: " + formType + "   Form column: " + formColumn);
+  debug("Form Type: " + formType + "   Form column: " + formColumn);
 
   // get the agents into an array
+  // FIXME: Column should reflect what is configured by maxTicketsPerAgent
+  // Ideally, this would be dynamic
   var aAgentQueue = agentSheet.getRange("A2:J").getValues(); // scoped to col J for a maxRange of 10, but needs to be updated if more than 12
 
   // locate the previous agent assigned
@@ -284,17 +272,15 @@ function seekPreviouslyAssignedAgentItem_(aAgentQueue)
 
 function parseFormType_(tags)
 {
-  // Pull in Properties
-  var spreadsheet = getSpreadsheet();
+  const spreadsheet = getSpreadsheet();
+  const maxRange = getMaxTicketsPerAgent();
 
-  var maxRangeProperty = PropertiesService.getScriptProperties().getProperty('maxRange');
   var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
   var subdomainProperty = PropertiesService.getScriptProperties().getProperty('subdomain');
   var userNameProperty = PropertiesService.getScriptProperties().getProperty('userName');
   var tokenProperty = PropertiesService.getScriptProperties().getProperty('token');
 
   // Initialize Variables and Sheet References
-  var maxRange = maxRangeProperty; // starts at column 5 goes out to 10 (5 possible formtype columns) (IMPORTANT: Look at line 215 (col J range)
   var verboseLogging = verboseLoggingProperty; // set to true for minute-by-minute logging
   var subdomain = subdomainProperty;
   var userName = userNameProperty;
@@ -303,10 +289,7 @@ function parseFormType_(tags)
   var logSheet     = spreadsheet.getSheetByName("Assignment Log");
   var debugSheet   = spreadsheet.getSheetByName("Debug Log");
 
-  //DEBUG//
-  Logger.log("Entered in to parseFormType_");
-  Logger.log("parseFormType:Tags:" + tags);
-  //DEBUB//
+  debug("parseFormType:Tags:" + tags);
 
   // determine the dynamic range
   for (var i = 5; i < maxRange; i++)
@@ -351,19 +334,16 @@ function testGetFormColumn()
   Logger.log(getFormColumn_("form_account"));
 }
 
-function getFormColumn_(formType)
-{
-  // Pull in Properties
-  var spreadsheet = getSpreadsheet();
+function getFormColumn_(formType) {
+  const spreadsheet = getSpreadsheet();
+  const maxRange = getMaxTicketsPerAgent();
 
-  var maxRangeProperty = PropertiesService.getScriptProperties().getProperty('maxRange');
   var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
   var subdomainProperty = PropertiesService.getScriptProperties().getProperty('subdomain');
   var userNameProperty = PropertiesService.getScriptProperties().getProperty('userName');
   var tokenProperty = PropertiesService.getScriptProperties().getProperty('token');
 
   // Initialize Variables and Sheet References
-  var maxRange = maxRangeProperty; // starts at column 5 goes out to 10 (5 possible formtype columns) (IMPORTANT: Look at line 215 (col J range)
   var verboseLogging = verboseLoggingProperty; // set to true for minute-by-minute logging
   var subdomain = subdomainProperty;
   var userName = userNameProperty;
@@ -373,15 +353,11 @@ function getFormColumn_(formType)
   var logSheet     = spreadsheet.getSheetByName("Assignment Log");
   var debugSheet   = spreadsheet.getSheetByName("Debug Log");
 
-  //DEBUG//
-  Logger.log("Entered in to parseFormType_");
-  Logger.log("maxRange:" + maxRange);
-  //DEBUG//
+  debug("getFormColumn_ maxRange:" + maxRange);
 
   // determine the dynamic range
-  for (var i = 5; i < maxRange; i++)
-  {
-    Logger.log("i:" + i + " :: " + agentSheet.getRange(1, i, 1, 1).getComment());
+  for (var i = 5; i < maxRange; i++) {
+    debug("i:" + i + " :: " + agentSheet.getRange(1, i, 1, 1).getComment());
     if (agentSheet.getRange(1, i, 1, 1).getComment() == formType)
     {
       return(i-1);
@@ -540,6 +516,17 @@ function getSpreadsheet() {
   return SpreadsheetApp.openById(sheetId);
 }
 
+function getConfigurationSheet() {
+  return getSpreadsheet().getSheetByName('Configuration');
+}
+
+function getMaxTicketsPerAgent() {
+  // TODO: Is there any performance benefit to accessing from PropertiesService?
+  const maxTicketsPerAgent = getConfigurationSheet().getRange('B6').getValue();
+
+  return parseInt(maxTicketsPerAgent, 10);
+}
+
 function setConfiguration() {
   const spreadsheet = getSpreadsheet();
 
@@ -553,9 +540,6 @@ function setConfiguration() {
 
   const zendeskToken = configurationSheet.getRange('B3').getValue();
   PropertiesService.getScriptProperties().setProperty('token', zendeskToken);
-
-  const maxRange = '10';
-  PropertiesService.getScriptProperties().setProperty('maxRange', maxRange);
 
   const verboseLogging = 'true';
   PropertiesService.getScriptProperties().setProperty('verboseLogging', verboseLogging);
