@@ -232,46 +232,25 @@ function seekPreviouslyAssignedAgentItem_(aAgentQueue) {
 
 function parseFormType_(tags) {
   const spreadsheet = getSpreadsheet();
+  const agentSheet = spreadsheet.getSheetByName("Support Agents");
   const maxRange = getMaxTicketsPerAgent();
 
-  var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
-  var subdomainProperty = PropertiesService.getScriptProperties().getProperty('subdomain');
-  var userNameProperty = PropertiesService.getScriptProperties().getProperty('userName');
-  var tokenProperty = PropertiesService.getScriptProperties().getProperty('token');
-
-  // Initialize Variables and Sheet References
-  var verboseLogging = verboseLoggingProperty; // set to true for minute-by-minute logging
-  var subdomain = subdomainProperty;
-  var userName = userNameProperty;
-  var token = tokenProperty;
-  var agentSheet   = spreadsheet.getSheetByName("Support Agents");
-  var logSheet     = spreadsheet.getSheetByName("Assignment Log");
-  var debugSheet   = spreadsheet.getSheetByName("Debug Log");
-
-  debug("parseFormType:Tags:" + tags);
-
   // determine the dynamic range
-  for (var i = 5; i < maxRange; i++)
-  {
-    // Logger.log(agentSheet.getRange(1, i, 1, 1).getComment());
-    if (agentSheet.getRange(1, i, 1, 1).getComment() == "")
-    {
-      var dynamicRangeMax = i - 5;
+  var dynamicRangeMax;
+  for(var i = 5; i < maxRange; i++) {
+    if(agentSheet.getRange(1, i, 1, 1).getComment() == "") {
+      dynamicRangeMax = i - 5;
       i = maxRange;
     }
   }
 
   // get dyanamic range into array
   var aFormTypes = agentSheet.getRange(1, 5, 1, dynamicRangeMax).getComments();
-
-  //DEBUG//
-  Logger.log("aFormTypes: " + aFormTypes.toString());
-  Logger.log("Width: " + dynamicRangeMax);
-  //DEBUG//
+  debug("aFormTypes: " + aFormTypes.toString() + ", " + "Width: " + dynamicRangeMax);
 
   // look at each form type column
-  for (var i = 0; i < (dynamicRangeMax); i++) {
-    if (tags.toString().indexOf(aFormTypes[0][i]) > -1) {
+  for(var i = 0; i < dynamicRangeMax; i++) {
+    if(tags.toString().indexOf(aFormTypes[0][i]) > -1) {
       debug("Found FormType Match!  Returning " + aFormTypes[0][i]);
 
       return(aFormTypes[0][i]);
