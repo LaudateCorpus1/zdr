@@ -24,7 +24,7 @@
     https://support.zendesk.com/hc/en-us/community/posts/203458976-Round-robin-ticket-assignment
 */
 
-function makeAssignments() {
+function assignTickets() {
   // Pull in Properties
   var spreadsheet = getSpreadsheet();
 
@@ -410,6 +410,7 @@ function getFormColumn_(formType)
   var subdomain = subdomainProperty;
   var userName = userNameProperty;
   var token = tokenProperty;
+
   var agentSheet   = spreadsheet.getSheetByName("Support Agents");
   var logSheet     = spreadsheet.getSheetByName("Assignment Log");
   var debugSheet   = spreadsheet.getSheetByName("Debug Log");
@@ -616,5 +617,5 @@ function main() {
 
   setAgentsTicketCount();
 
-  makeAssignments();
+  assignTickets();
 }
