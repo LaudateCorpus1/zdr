@@ -12,46 +12,41 @@ function assignTickets() {
   const logSheet = spreadsheet.getSheetByName("Assignment Log");
   const debugSheet = spreadsheet.getSheetByName("Debug Log");
 
+  const MAX_TICKETS_PER_AGENT = getMaxTicketsPerAgent();
+
   var subdomain = PropertiesService.getScriptProperties().getProperty('subdomain');
   var userName = PropertiesService.getScriptProperties().getProperty('userName');
   var token = PropertiesService.getScriptProperties().getProperty('token');
 
-  const MAX_TICKETS_PER_AGENT = getMaxTicketsPerAgent();
 
   // get the agents into an array
   var aAgentQueue = agentSheet.getRange("A2:G").getValues();
 
-  // get the unassigned (recent) ticket list using search api
-  var openTickets = fetchOpenTickets(subdomain, userName, token);
-
+  // Get open tickets using Zendesk API
+  const openTickets = fetchOpenTickets(subdomain, userName, token);
   debugSheet.getRange("A2").setValue(openTickets.results);
 
-  var j = openTickets.results.length;
-  if (j > MAX_TICKETS_PER_AGENT) {
-    j = MAX_TICKETS_PER_AGENT;
-  }
-  for (var i = 0; i < j; i++)
-  {
+  // Limit the number of tickets assigned to at most MAX_TICKETS_PER_AGENT
+  const assignableOpenTickets = openTickets.results.slice(0, MAX_TICKETS_PER_AGENT);
 
-    var ticketID = openTickets.results[i].id;
-    var tags = openTickets.results[i].tags.toString();
-    var assigneeID = openTickets.results[i].assignee_id;
+  var ticketId, tags, assigneeId;
+  for (var i = 0; i < assignableOpenTickets.length; i++) {
+    ticketId = assignableOpenTickets[i].id;
+    tags = assignableOpenTickets[i].tags.toString();
+    assigneeId = assignableOpenTickets[i].assignee_id;
 
-    // update log table
-    if (isDebugMode())
-    {
+    // Update log sheet with ticket details
+    if (isDebugMode()) {
       logSheet.insertRowBefore(2);
       logSheet.getRange("A2").setValue(Date());
-      logSheet.getRange("B2").setValue(ticketID);
-      if (assigneeID != null)
-      {
-        logSheet.getRange("C2").setValue(assigneeID);
+      logSheet.getRange("B2").setValue(ticketId);
+      if (assigneeId != null) {
+        logSheet.getRange("C2").setValue(assigneeId);
       }
       logSheet.getRange("D2").setValue(tags);
     }
 
-    if (assigneeID == null)
-    {
+    if (assigneeId == null) {
 
       if (isDebugMode())
       {
@@ -59,9 +54,10 @@ function assignTickets() {
       } else {
         logSheet.insertRowBefore(2);
         logSheet.getRange("A2").setValue(Date());
-        logSheet.getRange("B2").setValue(ticketID);
+        logSheet.getRange("B2").setValue(ticketId);
         logSheet.getRange("D2").setValue(tags);
       }
+
       logSheet.getRange("C2").setValue("Unassigned");
 
       // get form type
@@ -69,8 +65,7 @@ function assignTickets() {
       // update log table
       logSheet.getRange("E2").setValue(formType);
 
-      if (formType != "")
-      {
+      if (formType != "") {
 
         // get the currently available agent in the queue
         var agentAvailableItemNumber = seekNextAvailableAgentItem_(formType);
@@ -85,8 +80,7 @@ function assignTickets() {
         var agentRowNumber = agentAvailableItemNumber + 2;
 
         // post the assignment
-        if (postTicketAssignment_(subdomain, userName, token, ticketID, agentUserID) == true)
-        {
+        if (postTicketAssignment_(subdomain, userName, token, ticketId, agentUserID) == true) {
 
           // update log sheet
           logSheet.getRange("G2").setValue(assigneeName);
@@ -97,9 +91,9 @@ function assignTickets() {
 
           // set the assignment status for the current agent
           agentSheet.getRange("D" + agentRowNumber).setValue("x");
-          // agentSheet.getRange("H" + agentRowNumber).setValue(ticketID); // already provided in new log file
+          // agentSheet.getRange("H" + agentRowNumber).setValue(ticketId); // already provided in new log file
 
-          Logger.log("Assigned ticket ID " + ticketID + " to support agent " + aAgentQueue[agentAvailableItemNumber][1] + ".");
+          Logger.log("Assigned ticket ID " + ticketId + " to support agent " + aAgentQueue[agentAvailableItemNumber][1] + ".");
 
           // ticket assigned, update log sheet
           logSheet.getRange("F2").setValue("Ticket Assigned Automatically");
@@ -145,14 +139,13 @@ function fetchOpenTickets(subdomain, userName, token) {
   return Utilities.jsonParse(response);
 }
 
-function postTicketAssignment_(subdomain, userName, token, ticketID, agentUserID)
-{
+function postTicketAssignment_(subdomain, userName, token, ticketId, agentUserId) {
   token = userName + "/token:" + token;
   var encode = Utilities.base64Encode(token);
 
   var payload = {
     "ticket": {
-      "assignee_id" : parseInt(agentUserID)
+      "assignee_id" : parseInt(agentUserId)
     }
    };
 
@@ -171,20 +164,14 @@ function postTicketAssignment_(subdomain, userName, token, ticketID, agentUserID
 };
 
   //DEBUG READ ONLY MODE//
-  var result = UrlFetchApp.fetch("https://" + subdomain + ".zendesk.com/api/v2/tickets/" + ticketID + ".json", options);
+  var result = UrlFetchApp.fetch("https://" + subdomain + ".zendesk.com/api/v2/tickets/" + ticketId + ".json", options);
   var ticket = Utilities.jsonParse(result);
-  var assigneeID = ticket.ticket.assignee_id.toString();
-  //var assigneeID = agentUserID;
+  var assigneeId = ticket.ticket.assignee_id.toString();
+  //var assigneeId = agentUserID;
   //DEBUG//
 
   // posted successfully?
-  if (assigneeID == agentUserID)
-  {
-    return(true);
-  } else {
-    return(false);
-  }
-
+  return assigneeId == agentUserId;
 }
 
 function seekNextAvailableAgentItem_(formType) {
@@ -258,20 +245,17 @@ function seekNextAvailableAgentItem_(formType) {
   return(-1);
 }
 
-function seekPreviouslyAssignedAgentItem_(aAgentQueue)
-{
-  for (var i = 0; i < aAgentQueue.length; i++)
-  {
-    if (aAgentQueue[i][3] == "x")
-    {
+function seekPreviouslyAssignedAgentItem_(aAgentQueue) {
+  for (var i = 0; i < aAgentQueue.length; i++) {
+    if (aAgentQueue[i][3] == "x") {
       return(i);
     }
   }
+
   return(0);
 }
 
-function parseFormType_(tags)
-{
+function parseFormType_(tags) {
   const spreadsheet = getSpreadsheet();
   const maxRange = getMaxTicketsPerAgent();
 
@@ -311,27 +295,15 @@ function parseFormType_(tags)
   //DEBUG//
 
   // look at each form type column
-  for (var i = 0; i < (dynamicRangeMax); i++)
-  {
-    // DEBUG //
-    //Logger.log(i + ": " + aFormTypes[0][i]);
-    // DEBUG //
-
-    if (tags.toString().indexOf(aFormTypes[0][i]) > -1)
-    {
-      // DEBUG //
-      Logger.log("Found FormType Match!  Returning " + aFormTypes[0][i]);
-      // DEBUG //
+  for (var i = 0; i < (dynamicRangeMax); i++) {
+    if (tags.toString().indexOf(aFormTypes[0][i]) > -1) {
+      debug("Found FormType Match!  Returning " + aFormTypes[0][i]);
 
       return(aFormTypes[0][i]);
     }
   }
-  return("");
-}
 
-function testGetFormColumn()
-{
-  Logger.log(getFormColumn_("form_account"));
+  return("");
 }
 
 function getFormColumn_(formType) {
@@ -358,11 +330,11 @@ function getFormColumn_(formType) {
   // determine the dynamic range
   for (var i = 5; i < maxRange; i++) {
     debug("i:" + i + " :: " + agentSheet.getRange(1, i, 1, 1).getComment());
-    if (agentSheet.getRange(1, i, 1, 1).getComment() == formType)
-    {
+    if (agentSheet.getRange(1, i, 1, 1).getComment() == formType) {
       return(i-1);
     }
   }
+
   return(-1);
 }
 
