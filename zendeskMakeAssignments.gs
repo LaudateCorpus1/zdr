@@ -18,7 +18,6 @@ function assignTickets() {
   var userName = PropertiesService.getScriptProperties().getProperty('userName');
   var token = PropertiesService.getScriptProperties().getProperty('token');
 
-
   // get the agents into an array
   var aAgentQueue = agentSheet.getRange("A2:G").getValues();
 
@@ -40,77 +39,75 @@ function assignTickets() {
       logSheet.insertRowBefore(2);
       logSheet.getRange("A2").setValue(Date());
       logSheet.getRange("B2").setValue(ticketId);
+      logSheet.getRange("D2").setValue(tags);
+
       if (assigneeId != null) {
         logSheet.getRange("C2").setValue(assigneeId);
       }
+    }
+
+    // Ticket is already assigned, don't assign this ticket.
+    if (assigneeId !== null) { continue }
+
+    if (isDebugMode()) {
+      // ???
+    } else {
+      logSheet.insertRowBefore(2);
+      logSheet.getRange("A2").setValue(Date());
+      logSheet.getRange("B2").setValue(ticketId);
       logSheet.getRange("D2").setValue(tags);
     }
 
-    if (assigneeId == null) {
+    logSheet.getRange("C2").setValue("Unassigned");
 
-      if (isDebugMode())
-      {
-        // ???
-      } else {
-        logSheet.insertRowBefore(2);
-        logSheet.getRange("A2").setValue(Date());
-        logSheet.getRange("B2").setValue(ticketId);
-        logSheet.getRange("D2").setValue(tags);
+    // get form type
+    var formType = parseFormType_(tags);
+    // update log table
+    logSheet.getRange("E2").setValue(formType);
+
+    if (formType != "") {
+      // get the currently available agent in the queue
+      var agentAvailableItemNumber = seekNextAvailableAgentItem_(formType);
+
+      if (agentAvailableItemNumber == -1) {
+        //don't attempt to post if there are no available agents
+        debug("No Active Agents, exiting script.");
+
+        return(-1);
       }
 
-      logSheet.getRange("C2").setValue("Unassigned");
+      var assigneeName = aAgentQueue[agentAvailableItemNumber][1];
+      var agentUserID = aAgentQueue[agentAvailableItemNumber][2];
+      var agentRowNumber = agentAvailableItemNumber + 2;
 
-      // get form type
-      var formType = parseFormType_(tags);
-      // update log table
-      logSheet.getRange("E2").setValue(formType);
+      // post the assignment
+      if (postTicketAssignment_(subdomain, userName, token, ticketId, agentUserID) == true) {
 
-      if (formType != "") {
+        // update log sheet
+        logSheet.getRange("G2").setValue(assigneeName);
+        logSheet.getRange("H2").setValue(agentUserID);
 
-        // get the currently available agent in the queue
-        var agentAvailableItemNumber = seekNextAvailableAgentItem_(formType);
-        if (agentAvailableItemNumber == -1) {
-          //don't attempt to post if there are no available agents
-          debug("No Active Agents, exiting script.");
+        // clear the previous assignment status
+        agentSheet.getRange("D2:D").clearContent();
 
-          return(-1);
-        }
-        var assigneeName = aAgentQueue[agentAvailableItemNumber][1];
-        var agentUserID = aAgentQueue[agentAvailableItemNumber][2];
-        var agentRowNumber = agentAvailableItemNumber + 2;
+        // set the assignment status for the current agent
+        agentSheet.getRange("D" + agentRowNumber).setValue("x");
+        // agentSheet.getRange("H" + agentRowNumber).setValue(ticketId); // already provided in new log file
 
-        // post the assignment
-        if (postTicketAssignment_(subdomain, userName, token, ticketId, agentUserID) == true) {
+        Logger.log("Assigned ticket ID " + ticketId + " to support agent " + aAgentQueue[agentAvailableItemNumber][1] + ".");
 
-          // update log sheet
-          logSheet.getRange("G2").setValue(assigneeName);
-          logSheet.getRange("H2").setValue(agentUserID);
+        // ticket assigned, update log sheet
+        logSheet.getRange("F2").setValue("Ticket Assigned Automatically");
 
-          // clear the previous assignment status
-          agentSheet.getRange("D2:D").clearContent();
-
-          // set the assignment status for the current agent
-          agentSheet.getRange("D" + agentRowNumber).setValue("x");
-          // agentSheet.getRange("H" + agentRowNumber).setValue(ticketId); // already provided in new log file
-
-          Logger.log("Assigned ticket ID " + ticketId + " to support agent " + aAgentQueue[agentAvailableItemNumber][1] + ".");
-
-          // ticket assigned, update log sheet
-          logSheet.getRange("F2").setValue("Ticket Assigned Automatically");
-
-        } else {
-          // web service post failed, no action taken for this ticket, update log sheet
-          logSheet.getRange("F2").setValue("Zendesk API Post Failed");
-        }
       } else {
-        // not an assignable form type, no action taken for this ticket, update log sheet
-        logSheet.getRange("F2").setValue("Not Valid Form Type");
+        // web service post failed, no action taken for this ticket, update log sheet
+        logSheet.getRange("F2").setValue("Zendesk API Post Failed");
       }
-
     } else {
-      // assignee_id already filled, no action taken for this ticket, update log sheet
-      // logSheet.getRange("F2").setValue("Ticket Already Assigned");
+      // not an assignable form type, no action taken for this ticket, update log sheet
+      logSheet.getRange("F2").setValue("Not Valid Form Type");
     }
+
 
   }
 
