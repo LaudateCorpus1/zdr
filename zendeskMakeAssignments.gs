@@ -449,16 +449,15 @@ function debug(data) {
   }
 }
 
+function getCurrentUtcHour() {
+  return new Date().getUTCHours();
+}
+
 // Set if agent status to yes or no based on their working hours.
 function setAgentStatuses() {
   const sheetId = PropertiesService.getScriptProperties().getProperty('sheetId');
   const spreadsheet = SpreadsheetApp.openById(sheetId);
   const agentSheet = spreadsheet.getSheetByName('Support Agents');
-
-  const currentDate = new Date();
-  const currentHour = currentDate.getUTCHours();
-
-  debug('Current hour in UTC: ' + currentHour);
 
   // Compensate for zero offset index
   const OFFSET = 1;
@@ -500,7 +499,7 @@ function setAgentStatuses() {
 
     agentSheet.getRange(AGENT_STATUS_COLUMN + rowIndex).setValue(agentActive);
 
-    debug('Set ' + agentName + ' status to: ' + agentActive);
+    debug('Set ' + agentName + ' (shift: ' + shiftData +  ') status to: ' + agentActive + ' for current hour: ' + getCurrentUtcHour());
   });
 }
 
@@ -515,11 +514,9 @@ function hasOverride(range) {
 
 // startHour and endHour are string representations of integers from 0 to 23
 function isWithinWorkingHours(startHour, endHour) {
+  const currentHour = getCurrentUtcHour();
   startHour = parseInt(startHour, 10);
   endHour = parseInt(endHour, 10);
-
-  const now = new Date();
-  const currentHour = now.getUTCHours();
 
   if(isDaylightSavingsTime()) {
     startHour = startHour + 1
@@ -532,7 +529,12 @@ function isWithinWorkingHours(startHour, endHour) {
     return false;
   } else if(endHour < startHour) {
     // endHour is the next day
-    endHour = endHour + 24;
+    endHour = endHour + 24
+
+    if(currentHour === 0) {
+      // startHour is the previous day
+      startHour = startHour - 24
+    }
 
     return (currentHour >= startHour && currentHour < endHour);
   } else {
@@ -563,7 +565,7 @@ function isESTWeekDay() {
 
   const now = new Date();
   const day = now.getUTCDay();
-  const hour = now.getUTCHours();
+  const hour = getCurrentUtcHour();
 
   // Correct for ET day vs. UTC day
   if(hour + offsetFromUTC() < 0) {
@@ -611,4 +613,3 @@ function main() {
 
   makeAssignments();
 }
-
