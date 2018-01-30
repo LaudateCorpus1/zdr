@@ -543,7 +543,7 @@ function isWithinWorkingHours(startHour, endHour) {
 }
 
 function isDaylightSavingsTime() {
-  return PropertiesService.getScriptProperties().getProperty('isDaylightSavingsTime');
+  return 'true' === PropertiesService.getScriptProperties().getProperty('isDaylightSavingsTime');
 }
 
 function offsetFromUTC() {
