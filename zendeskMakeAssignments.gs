@@ -112,7 +112,8 @@ function fetchAssignedTickets(agentId) {
   const subdomain = getSubdomain();
   const username = getUsername();
   const token = getToken();
-  const url = 'https://' + subdomain + '.zendesk.com/api/v2/users/' + agentId + '/related.json';
+  const url = 'https://' + subdomain + '.zendesk.com/api/v2/search.json' + "?query=type:ticket status:open assignee:" + agentId;
+
   const authToken = username + "/token:" + token;
   const encodedAuthToken = Utilities.base64Encode(authToken);
   const options = {
@@ -122,11 +123,11 @@ function fetchAssignedTickets(agentId) {
     }
   };
 
-  debug('Fetching: ' + url + ' ' + options + ' with token ' + token);
+  debug('Fetch url: ' + url);
   const response = UrlFetchApp.fetch(url, options);
   const jsonResponse = JSON.parse(response);
 
-  return jsonResponse.user_related.assigned_tickets;
+  return jsonResponse.count;
 }
 
 function fetchOpenTickets() {
@@ -459,11 +460,6 @@ function isESTWeekDay() {
   return day !== SUNDAY && day !== SATURDAY;
 }
 
-function setAgentsTicketCount() {
-  // TODO: Make request to Zendesk api
-  // TODO: Update spreadsheet column with values
-}
-
 // Getters
 function getSpreadsheet() {
   const sheetId = "SHEET_ID";
@@ -532,8 +528,6 @@ function main() {
   setConfiguration();
 
   setAgentStatuses();
-
-  setAgentsTicketCount();
 
   assignTickets();
 }
