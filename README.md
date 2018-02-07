@@ -39,3 +39,4 @@ You'll need to convert from your local time zone into UTC time zone. For example
 - Google Apps Sheets API: https://developers.google.com/apps-script/reference/spreadsheet/
 
 - Triggers https://developers.google.com/apps-script/guides/triggers/
+- API Console https://developer.zendesk.com/requests/new

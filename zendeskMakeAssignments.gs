@@ -79,6 +79,56 @@ function assignTickets() {
   }
 }
 
+// This function can be run independently to set the number of tickets
+// that are currently assigned to an agent.
+function setAssignedTicketsPerAgent() {
+  setConfiguration();
+
+  const TICKETS_ASSIGNED_COLUMN = 'I';
+  const AGENT_ID_COLUMN_INDEX = 2;
+  const INDEX_OFFSET = 1;
+
+  const agentSheet = getAgentSheet();
+  const dataRange = agentSheet.getDataRange();
+  const rowsWithData = dataRange.getValues();
+
+  var agentId, ticketCount, rowIndex;
+
+  rowsWithData.forEach(function(row, index) {
+    // Skip header row
+    if(index === 0) { return }
+
+    rowIndex = index + INDEX_OFFSET;
+
+    agentId = row[AGENT_ID_COLUMN_INDEX];
+
+    ticketCount = fetchAssignedTickets(agentId);
+
+    agentSheet.getRange(TICKETS_ASSIGNED_COLUMN + rowIndex).setValue(ticketCount);
+  });
+}
+
+function fetchAssignedTickets(agentId) {
+  const subdomain = getSubdomain();
+  const username = getUsername();
+  const token = getToken();
+  const url = 'https://' + subdomain + '.zendesk.com/api/v2/users/' + agentId + '/related.json';
+  const authToken = username + "/token:" + token;
+  const encodedAuthToken = Utilities.base64Encode(authToken);
+  const options = {
+    "method": "get",
+    "headers": {
+      "Authorization": "Basic " + encodedAuthToken
+    }
+  };
+
+  debug('Fetching: ' + url + ' ' + options + ' with token ' + token);
+  const response = UrlFetchApp.fetch(url, options);
+  const jsonResponse = JSON.parse(response);
+
+  return jsonResponse.user_related.assigned_tickets;
+}
+
 function fetchOpenTickets() {
   const subdomain = getSubdomain();
   const username = getUsername();
@@ -91,8 +141,7 @@ function fetchOpenTickets() {
   const encodedAuthToken = Utilities.base64Encode(authToken);
   const options = {
     "method" : "get",
-    "headers" :
-    {
+    "headers" : {
       "Content-type":"application/xml",
       "Authorization":  "Basic " + encodedAuthToken
     }
@@ -101,7 +150,7 @@ function fetchOpenTickets() {
   debug('Fetch open tickets for: ' + subdomain + ', ' + userName + ', ' + authToken);
 
   const response = UrlFetchApp.fetch(searchUrl, options);
-  const jsonResponse = Utilities.jsonParse(response);
+  const jsonResponse = JSON.parse(response);
   const MAX_TICKETS_PER_AGENT = getMaxTicketsPerAgent();
   const maxOpenTickets = jsonResponse.results.slice(0, MAX_TICKETS_PER_AGENT);
 
@@ -136,7 +185,7 @@ function postTicketAssignment_(subdomain, userName, token, ticketId, agentUserId
 
   //DEBUG READ ONLY MODE//
   var result = UrlFetchApp.fetch("https://" + subdomain + ".zendesk.com/api/v2/tickets/" + ticketId + ".json", options);
-  var ticket = Utilities.jsonParse(result);
+  var ticket = JSON.parse(result);
   var assigneeId = ticket.ticket.assignee_id.toString();
   //var assigneeId = agentUserID;
   //DEBUG//
@@ -146,8 +195,7 @@ function postTicketAssignment_(subdomain, userName, token, ticketId, agentUserId
 }
 
 function seekNextAvailableAgentItem_(formType) {
-  const spreadsheet = getSpreadsheet();
-  const agentSheet = spreadsheet.getSheetByName("Support Agents");
+  const agentSheet = getAgentSheet();
   const formColumn = getFormColumn_(formType);
 
   // get the agents into an array
@@ -155,6 +203,7 @@ function seekNextAvailableAgentItem_(formType) {
   // FIXME: Column should reflect what is configured by maxTicketsPerAgent
   // Ideally, this would be dynamic
   const aAgentQueue = agentSheet.getRange("A2:J").getValues();
+  const rowsWithData = agentSheet.getDataRange().getValues();
 
   // locate the previous agent assigned
   const previouslyAssignedAgentItem = seekPreviouslyAssignedAgentItem_(aAgentQueue);
@@ -187,21 +236,30 @@ function seekNextAvailableAgentItem_(formType) {
   return null;
 }
 
-function seekPreviouslyAssignedAgentItem_(agents) {
+
+
+function seekPreviouslyAssignedAgentItem_(rows) {
   const QUEUE_COLUMN = 3;
 
-  for(var rowIndex = 0; i < agents.length; i++) {
-    if(agents[rowIndex][QUEUE_COLUMN] === "x") {
-      return rowIndex;
+  for(var i = 0; i < rows.length; i++) {
+    if(rows[i][QUEUE_COLUMN] === "x") {
+      return i;
     }
   }
 
   return 0;
 }
 
+
+// Match ticket type to the ones that different people can handle
+// There is an x each tag column if the agent should be assigned tickets
+// with that tag.
+// Currently, tags are:
+// draw_an_ace for gambler column
+// rlbaker_test for test column
+// push_to_veteran for legacy gambler column
 function parseFormType_(tags) {
-  const spreadsheet = getSpreadsheet();
-  const agentSheet = spreadsheet.getSheetByName("Support Agents");
+  const agentSheet = getAgentSheet();
   const maxRange = getMaxTicketsPerAgent();
 
   // determine the dynamic range
@@ -214,6 +272,7 @@ function parseFormType_(tags) {
   }
 
   // get dyanamic range into array
+  // Get comment on a specific cell. the comment is the tag.
   var aFormTypes = agentSheet.getRange(1, 5, 1, dynamicRangeMax).getComments();
   debug("aFormTypes: " + aFormTypes.toString() + ", " + "Width: " + dynamicRangeMax);
 
@@ -222,6 +281,7 @@ function parseFormType_(tags) {
     if(tags.toString().indexOf(aFormTypes[0][i]) > -1) {
       debug("Found FormType Match!  Returning " + aFormTypes[0][i]);
 
+      // Returns if there's an x for a specifc tag?
       return(aFormTypes[0][i]);
     }
   }
@@ -409,6 +469,10 @@ function getSpreadsheet() {
   const sheetId = "SHEET_ID";
 
   return SpreadsheetApp.openById(sheetId);
+}
+
+function getAgentSheet() {
+  return getSpreadsheet().getSheetByName('Support Agents');
 }
 
 function getConfigurationSheet() {
