@@ -1,7 +1,7 @@
 ## About
 This script is used to manage rotations within Zendesk.
 
--  Search filter changes to limit results to only tags of interest and oldest tickets first to avoid hitting script processing time limits
+- Display the number of tickets currently assigned to each agent
 - Limited assignment to a maximum of 10 tickets per pass to avoid the entire queue from being assigned at once
 - Fixed an issue where the last agent assigned would continue to be pushed tickets if there were no active agents including the previously assigned agent
 
@@ -13,13 +13,19 @@ Agent Status will automatically be set to `yes` when:
 
 ## Usage
 
-0. Open up the target spreadsheet and click Tools > Script Editor.
-0. Copy and paste the script in there.
-0. Replace 'SHEET_ID' with your spreadsheet id in the `setConfiguration` method. This can be found from the URL https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit?ts=123#gid=456
-0. Configure a trigger to run the script automatically.
+### Ticket Assignment
+1. Open up the target spreadsheet and click Tools > Script Editor.
+1. Copy and paste the script in there.
+1. Replace 'SHEET_ID' with your spreadsheet id in the `setConfiguration` method. This can be found from the URL https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit?ts=123#gid=456
+1. Configure a trigger to run the script automatically.
     - Open up the script editor and click Edit > Current Project's Triggers > Add a new trigger
     - Select the following options: main, Time-driven, Minutes timer, Every 30 minutes.
-0. Set up your spreadsheet sheets and columns based on the examples in `agents.csv` and `configuration.csv`
+1. Set up your spreadsheet sheets and columns based on the examples in `agents.csv` and `configuration.csv`
+
+### Display Number of Tickets per Agent
+1. Column I should be used to display the number of tickets per agent. On each run of the script, the column values will be updated.
+1. The function `setAssignedTicketsPerAgent` will set the number of open tickets assigned to an agent.
+1. Configure a time based trigger to run this function periodically.
 
 ## Configuration
 
@@ -37,6 +43,6 @@ You'll need to convert from your local time zone into UTC time zone. For example
 
 ## References
 - Google Apps Sheets API: https://developers.google.com/apps-script/reference/spreadsheet/
-
 - Triggers https://developers.google.com/apps-script/guides/triggers/
-- API Console https://developer.zendesk.com/requests/new
+- Zendesk API Console https://developer.zendesk.com/requests/new
+- You can test api requests with curl, for an example, see https://developer.zendesk.com/rest_api/docs/core/requests. (Ex: `curl "https://greenhouse.zendesk.com/api/v2/search.json" -G --data-urlencode "query=type:ticket status:open assignee:ASSIGNEE_ID" -v -u EMAIL/token:TOKEN`)

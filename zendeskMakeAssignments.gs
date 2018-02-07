@@ -112,7 +112,7 @@ function fetchAssignedTickets(agentId) {
   const subdomain = getSubdomain();
   const username = getUsername();
   const token = getToken();
-  const url = 'https://' + subdomain + '.zendesk.com/api/v2/search.json' + "?query=type:ticket status:open assignee:" + agentId;
+  const url = 'https://' + subdomain + '.zendesk.com/api/v2/search.json' + '?query=type:ticket status:open assignee:' + agentId;
 
   const authToken = username + "/token:" + token;
   const encodedAuthToken = Utilities.base64Encode(authToken);
