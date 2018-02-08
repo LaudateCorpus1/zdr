@@ -6,11 +6,9 @@
 */
 
 function assignTickets() {
-  const spreadsheet = getSpreadsheet();
-
-  const agentSheet  = spreadsheet.getSheetByName("Support Agents");
-  const logSheet = spreadsheet.getSheetByName("Assignment Log");
-  const debugSheet = spreadsheet.getSheetByName("Debug Log");
+  const agentSheet  = getAgentSheet();
+  const logSheet = getTicketLogSheet();
+  const debugSheet = getDebugSheet();
 
   const subdomain = getSubdomain();
   const username = getUsername();
@@ -23,6 +21,9 @@ function assignTickets() {
   var aAgentQueue = agentSheet.getRange("A2:G").getValues();
 
   var ticketId, tags, assigneeId, formType;
+
+  debug('Number of open tickets: ' + openTickets.length);
+
   for(var i = 0; i < openTickets.length; i++) {
     ticketId = openTickets[i].id;
     tags = openTickets[i].tags.toString();
@@ -295,23 +296,8 @@ function parseFormType_(tags) {
 }
 
 function getFormColumn_(formType) {
-  const spreadsheet = getSpreadsheet();
   const maxRange = getMaxTicketsPerAgent();
-
-  var verboseLoggingProperty = PropertiesService.getScriptProperties().getProperty('verboseLogging');
-  var subdomainProperty = PropertiesService.getScriptProperties().getProperty('subdomain');
-  var userNameProperty = PropertiesService.getScriptProperties().getProperty('userName');
-  var tokenProperty = PropertiesService.getScriptProperties().getProperty('token');
-
-  // Initialize Variables and Sheet References
-  var verboseLogging = verboseLoggingProperty; // set to true for minute-by-minute logging
-  var subdomain = subdomainProperty;
-  var userName = userNameProperty;
-  var token = tokenProperty;
-
-  var agentSheet   = spreadsheet.getSheetByName("Support Agents");
-  var logSheet     = spreadsheet.getSheetByName("Assignment Log");
-  var debugSheet   = spreadsheet.getSheetByName("Debug Log");
+  const agentSheet = getAgentSheet();
 
   debug("getFormColumn_ maxRange:" + maxRange);
 
@@ -483,6 +469,14 @@ function getConfigurationSheet() {
   return getSpreadsheet().getSheetByName('Configuration');
 }
 
+function getDebugSheet() {
+  return getSpreadsheet().getSheetByName('Debug Log');
+}
+
+function getTicketLogSheet() {
+  return getSpreadsheet().getSheetByName('Assignment Log');
+}
+
 function getMaxTicketsPerAgent() {
   // TODO: Is there any performance benefit to accessing from PropertiesService?
   const maxTicketsPerAgent = getConfigurationSheet().getRange('B6').getValue();
@@ -500,10 +494,6 @@ function getUsername() {
 
 function getToken() {
   return PropertiesService.getScriptProperties().getProperty('token');
-}
-
-function getDebugSheet() {
-  return getSpreadsheet().getSheetByName('Debug Log');
 }
 
 function setConfiguration() {
