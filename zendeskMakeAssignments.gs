@@ -478,8 +478,7 @@ function getTicketLogSheet() {
 }
 
 function getMaxTicketsPerAgent() {
-  // TODO: Is there any performance benefit to accessing from PropertiesService?
-  const maxTicketsPerAgent = getConfigurationSheet().getRange('B6').getValue();
+  const maxTicketsPerAgent = PropertiesService.getScriptProperties().getProperty('maxTicketsPerAgent');
 
   return parseInt(maxTicketsPerAgent, 10);
 }
@@ -519,6 +518,9 @@ function setConfiguration() {
 
   const readonly = configurationSheet.getRange('B7').getValue();
   PropertiesService.getScriptProperties().setProperty('readonly', readonly);
+
+  const maxTicketsPerAgent = configurationSheet.getRange('B6').getValue();
+  PropertiesService.getScriptProperties().setProperty('maxTicketsPerAgent', maxTicketsPerAgent);
 
   debug('Set Configuration:');
   debug(PropertiesService.getScriptProperties().getProperties());
