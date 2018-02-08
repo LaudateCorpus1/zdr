@@ -12,6 +12,10 @@ function assignTickets() {
   const logSheet = spreadsheet.getSheetByName("Assignment Log");
   const debugSheet = spreadsheet.getSheetByName("Debug Log");
 
+  const subdomain = getSubdomain();
+  const username = getUsername();
+  const token = getToken();
+
   // Get open tickets using Zendesk API
   const openTickets = fetchOpenTickets();
 
@@ -49,12 +53,13 @@ function assignTickets() {
     // No agents available. Exit script.
     if(!agentAvailableItemNumber) { return }
 
+    // FIXME: What are these magic numbers?
     var assigneeName = aAgentQueue[agentAvailableItemNumber][1];
     var agentUserID = aAgentQueue[agentAvailableItemNumber][2];
     var agentRowNumber = agentAvailableItemNumber + 2;
 
     // post the assignment
-    if (postTicketAssignment_(subdomain, userName, token, ticketId, agentUserID) == true) {
+    if (postTicketAssignment_(subdomain, username, token, ticketId, agentUserID) == true) {
 
       // update log sheet
       logSheet.getRange("G2").setValue(assigneeName);
@@ -138,7 +143,7 @@ function fetchOpenTickets() {
   // by including tags and ordering by oldest first
   const searchUrl = "https://" + subdomain + ".zendesk.com/api/v2/search.json?" +
     "query=type:ticket status:new assignee:none tags:draw_an_ace order_by:created sort:asc";
-  const authToken = userName + "/token:" + token;
+  const authToken = username + "/token:" + token;
   const encodedAuthToken = Utilities.base64Encode(authToken);
   const options = {
     "method" : "get",
@@ -148,7 +153,7 @@ function fetchOpenTickets() {
     }
   };
 
-  debug('Fetch open tickets for: ' + subdomain + ', ' + userName + ', ' + authToken);
+  debug('Fetch open tickets for: ' + subdomain + ', ' + username + ', ' + authToken);
 
   const response = UrlFetchApp.fetch(searchUrl, options);
   const jsonResponse = JSON.parse(response);
@@ -164,32 +169,33 @@ function postTicketAssignment_(subdomain, userName, token, ticketId, agentUserId
   token = userName + "/token:" + token;
   var encode = Utilities.base64Encode(token);
 
-  var payload = {
+  const payload = {
     "ticket": {
       "assignee_id" : parseInt(agentUserId)
     }
    };
 
- payload = JSON.stringify(payload);
+   const options = {
+      "method" : "put",
+      "contentType" : "application/json",
+      "headers" :
+      {
+        "Authorization" :  "Basic " + encode
+      },
+      "payload" : JSON.stringify(payload)
+    };
 
+  const url = "https://" + subdomain + ".zendesk.com/api/v2/tickets/" + ticketId + ".json";
 
- var options =
- {
-  "method" : "put",
-  "contentType" : "application/json",
-  "headers" :
-  {
-    "Authorization" :  "Basic " + encode
-  },
-  "payload" : payload
-};
+  debug('readonly:' + isReadonly() + ' Fetch url: ' + url);
 
-  //DEBUG READ ONLY MODE//
-  var result = UrlFetchApp.fetch("https://" + subdomain + ".zendesk.com/api/v2/tickets/" + ticketId + ".json", options);
-  var ticket = JSON.parse(result);
-  var assigneeId = ticket.ticket.assignee_id.toString();
-  //var assigneeId = agentUserID;
-  //DEBUG//
+  if(isReadonly()) {
+    var assigneeId = agentUserId;
+  } else {
+    var response = UrlFetchApp.fetch(url, options);
+    var ticket = JSON.parse(response);
+    var assigneeId = ticket.ticket.assignee_id.toString();
+  }
 
   // posted successfully?
   return assigneeId == agentUserId;
@@ -236,8 +242,6 @@ function seekNextAvailableAgentItem_(formType) {
 
   return null;
 }
-
-
 
 function seekPreviouslyAssignedAgentItem_(rows) {
   const QUEUE_COLUMN = 3;
@@ -427,6 +431,10 @@ function isDaylightSavingsTime() {
   return 'true' === PropertiesService.getScriptProperties().getProperty('isDaylightSavingsTime');
 }
 
+function isReadonly() {
+  return 'true' === PropertiesService.getScriptProperties().getProperty('readonly');
+}
+
 function offsetFromUTC() {
   const EST_OFFSET = -5;
 
@@ -519,6 +527,9 @@ function setConfiguration() {
 
   const isDaylightSavingsTime = configurationSheet.getRange('B5').getValue() === 'yes';
   PropertiesService.getScriptProperties().setProperty('isDaylightSavingsTime', isDaylightSavingsTime);
+
+  const readonly = configurationSheet.getRange('B7').getValue();
+  PropertiesService.getScriptProperties().setProperty('readonly', readonly);
 
   debug('Set Configuration:');
   debug(PropertiesService.getScriptProperties().getProperties());
