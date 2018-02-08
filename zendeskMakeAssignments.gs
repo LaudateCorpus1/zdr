@@ -270,7 +270,7 @@ function parseFormType_(tags) {
   // determine the dynamic range
   var dynamicRangeMax;
   for(var i = 5; i < maxRange; i++) {
-    if(agentSheet.getRange(1, i, 1, 1).getComment() == "") {
+    if(agentSheet.getRange(1, i, 1, 1).getNote() == "") {
       dynamicRangeMax = i - 5;
       i = maxRange;
     }
@@ -278,7 +278,7 @@ function parseFormType_(tags) {
 
   // get dyanamic range into array
   // Get comment on a specific cell. the comment is the tag.
-  var aFormTypes = agentSheet.getRange(1, 5, 1, dynamicRangeMax).getComments();
+  var aFormTypes = agentSheet.getRange(1, 5, 1, dynamicRangeMax).getNotes();
   debug("aFormTypes: " + aFormTypes.toString() + ", " + "Width: " + dynamicRangeMax);
 
   // look at each form type column
@@ -317,8 +317,8 @@ function getFormColumn_(formType) {
 
   // determine the dynamic range
   for (var i = 5; i < maxRange; i++) {
-    debug("i:" + i + " :: " + agentSheet.getRange(1, i, 1, 1).getComment());
-    if (agentSheet.getRange(1, i, 1, 1).getComment() == formType) {
+    debug("i:" + i + " :: " + agentSheet.getRange(1, i, 1, 1).getNote());
+    if (agentSheet.getRange(1, i, 1, 1).getNote() == formType) {
       return(i-1);
     }
   }
