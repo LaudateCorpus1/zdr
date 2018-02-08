@@ -129,9 +129,7 @@ function fetchAssignedTickets(agentId) {
     }
   };
 
-  debug('Fetch url: ' + url);
-  const response = UrlFetchApp.fetch(url, options);
-  const jsonResponse = JSON.parse(response);
+  const jsonResponse = fetchJson(url, options);
 
   return jsonResponse.count;
 }
@@ -154,10 +152,7 @@ function fetchOpenTickets() {
     }
   };
 
-  debug('Fetch open tickets for: ' + subdomain + ', ' + username + ', ' + authToken);
-
-  const response = UrlFetchApp.fetch(searchUrl, options);
-  const jsonResponse = JSON.parse(response);
+  const jsonResponse = fetchJson(searchUrl, options);
   const MAX_TICKETS_PER_AGENT = getMaxTicketsPerAgent();
   const maxOpenTickets = jsonResponse.results.slice(0, MAX_TICKETS_PER_AGENT);
 
@@ -188,13 +183,10 @@ function postTicketAssignment_(subdomain, userName, token, ticketId, agentUserId
 
   const url = "https://" + subdomain + ".zendesk.com/api/v2/tickets/" + ticketId + ".json";
 
-  debug('readonly:' + isReadonly() + ' Fetch url: ' + url);
-
   if(isReadonly()) {
     var assigneeId = agentUserId;
   } else {
-    var response = UrlFetchApp.fetch(url, options);
-    var ticket = JSON.parse(response);
+    var ticket = fetchJson(url, options)
     var assigneeId = ticket.ticket.assignee_id.toString();
   }
 
@@ -452,6 +444,15 @@ function isESTWeekDay() {
   }
 
   return day !== SUNDAY && day !== SATURDAY;
+}
+
+
+function fetchJson(url, options) {
+  debug("Fetch: " + url);
+
+  const response = UrlFetchApp.fetch(url, options);
+
+  return JSON.parse(response);
 }
 
 // Getters
