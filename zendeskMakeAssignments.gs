@@ -6,7 +6,7 @@
 */
 
 function assignTickets() {
-  const agentSheet  = getAgentSheet();
+  const agentSheet = getAgentSheet();
   const logSheet = getTicketLogSheet();
   const debugSheet = getDebugSheet();
 
@@ -247,7 +247,6 @@ function seekPreviouslyAssignedAgentItem_(rows) {
 
   return 0;
 }
-
 
 // Match ticket type to the ones that different people can handle
 // There is an x each tag column if the agent should be assigned tickets
@@ -512,8 +511,7 @@ function setConfiguration() {
   const zendeskToken = configurationSheet.getRange('B3').getValue();
   PropertiesService.getScriptProperties().setProperty('token', zendeskToken);
 
-  const verboseLogging = 'true';
-  PropertiesService.getScriptProperties().setProperty('verboseLogging', verboseLogging);
+  const debug = 'true';
   PropertiesService.getScriptProperties().setProperty('debug', verboseLogging);
 
   const isDaylightSavingsTime = configurationSheet.getRange('B5').getValue() === 'yes';
