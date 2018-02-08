@@ -42,6 +42,10 @@ You'll need to convert from your local time zone into UTC time zone. For example
 - __daylight savings time?:__ Determine if we should compensate for daylight savings time. If this flag is set incorrectly, all calculations will be off by one. Value should be `yes` or `no`. For an example converter, check out https://www.timeanddate.com/worldclock/converter.html?iso=20180116T140000&p1=179&p2=1440
 - __readonly:__ Determines if the script will actually assign tickets or not.
 
+## Debugging
+
+After you run the function, click View > Logs or View > Execution Transcript. The Execution Transcript also includes the duration for function run times, which can be helpful since Google limits the total script duration.
+
 ## References
 - Google Apps Sheets API: https://developers.google.com/apps-script/reference/spreadsheet/
 - Triggers https://developers.google.com/apps-script/guides/triggers/
