@@ -317,6 +317,10 @@ function getCurrentUtcHour() {
   return new Date().getUTCHours();
 }
 
+function getCurrentUtcDay() {
+  return new Date().getUTCDay();
+}
+
 // Set if agent status to yes or no based on their working hours.
 function setAgentStatuses() {
   const agentSheet = getSpreadsheet().getSheetByName('Support Agents');
@@ -361,12 +365,17 @@ function setAgentStatuses() {
 
     agentSheet.getRange(AGENT_STATUS_COLUMN + rowIndex).setValue(agentActive);
 
-    debug('Set ' + agentName + ' (shift: ' + shiftData +  ') status to: ' + agentActive + ' for current hour: ' + getCurrentUtcHour());
+    debug('Set ' + agentName + ' (shift: ' + shiftData +  ') status to: ' + agentActive + ' for day: ' + getCurrentUtcDay() + ' and hour: ' + getCurrentUtcHour());
   });
 }
 
 function isAgentActive(startHour, endHour) {
-  return isESTWeekDay() && isWithinWorkingHours(startHour, endHour);
+  const weekday = isESTWeekDay();
+  const workingHour = isWithinWorkingHours(startHour, endHour);
+
+  debug('  is weekday: ' + weekday + ' working: ' + workingHour);
+
+  return weekday && workingHour;
 }
 
 // We strike through the agent's name to override them as not active
@@ -430,7 +439,7 @@ function isESTWeekDay() {
   const SUNDAY = 0;
 
   const now = new Date();
-  const day = now.getUTCDay();
+  const day = getCurrentUtcDay();
   const hour = getCurrentUtcHour();
 
   // Correct for ET day vs. UTC day
