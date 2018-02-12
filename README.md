@@ -51,3 +51,4 @@ After you run the function, click View > Logs or View > Execution Transcript. Th
 - Triggers https://developers.google.com/apps-script/guides/triggers/
 - Zendesk API Console https://developer.zendesk.com/requests/new
 - You can test api requests with curl, for an example, see https://developer.zendesk.com/rest_api/docs/core/requests. (Ex: `curl "https://greenhouse.zendesk.com/api/v2/search.json" -G --data-urlencode "query=type:ticket status:open assignee:ASSIGNEE_ID" -v -u EMAIL/token:TOKEN`)
+- Runtime restrictions https://developers.google.com/apps-script/guides/services/quotas
