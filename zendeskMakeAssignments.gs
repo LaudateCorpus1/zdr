@@ -510,8 +510,8 @@ function setConfiguration() {
   const zendeskToken = configurationSheet.getRange('B3').getValue();
   PropertiesService.getScriptProperties().setProperty('token', zendeskToken);
 
-  const debug = 'true';
-  PropertiesService.getScriptProperties().setProperty('debug', verboseLogging);
+  const isDebug = 'true';
+  PropertiesService.getScriptProperties().setProperty('debug', isDebug);
 
   const isDaylightSavingsTime = configurationSheet.getRange('B5').getValue() === 'yes';
   PropertiesService.getScriptProperties().setProperty('isDaylightSavingsTime', isDaylightSavingsTime);
