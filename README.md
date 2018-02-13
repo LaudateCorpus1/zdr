@@ -41,6 +41,7 @@ This should be the start and end of working hours in UTC and 24 hour notation se
 You'll need to convert from your local time zone into UTC time zone. For example, 9am - 5pm EST would be represented as `14-22` and 9:00AM - 5:00PM PST would be `17-1`.
 - __daylight savings time?:__ Determine if we should compensate for daylight savings time. If this flag is set incorrectly, all calculations will be off by one. Value should be `yes` or `no`. For an example converter, check out https://www.timeanddate.com/worldclock/converter.html?iso=20180116T140000&p1=179&p2=1440
 - __readonly:__ Determines if the script will actually assign tickets or not.
+- __max tickets per round__: Determines how many tickets each run of the ticket will assign.
 
 ## Debugging
 
