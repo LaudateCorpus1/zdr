@@ -30,7 +30,6 @@ function assignTickets() {
     assigneeId = openTickets[i].assignee_id;
     formType = parseFormType_(tags);
 
-    // TODO: Extract method logTicket
     // Update log sheet with ticket details
     if(isDebugMode()) {
       logSheet.insertRowBefore(2);
@@ -85,11 +84,7 @@ function assignTickets() {
   }
 }
 
-// This function can be run independently to set the number of tickets
-// that are currently assigned to an agent.
 function setAssignedTicketsPerAgent() {
-  setConfiguration();
-
   const TICKETS_ASSIGNED_COLUMN = 'I';
   const AGENT_ID_COLUMN_INDEX = 2;
   const INDEX_OFFSET = 1;
@@ -134,6 +129,67 @@ function fetchAssignedTickets(agentId) {
   return jsonResponse.count;
 }
 
+function fakeOpenTickets() {
+  const fakeTickets = [
+    {
+      id: 1,
+      tags: [
+        "am_notified",
+        "customer_support",
+        "greenhouse_recruiting_product",
+      ],
+      assignee_id: null,
+    },
+    {
+      id: 2,
+      tags: [
+        "am_notified",
+        "customer_support",
+        "greenhouse_recruiting_product",
+      ],
+      assignee_id: null,
+    },
+    {
+      id: 3,
+      tags: [
+        "am_notified",
+        "customer_support",
+        "push_to_veteran",
+      ],
+      assignee_id: null,
+    },
+    {
+      id: 4,
+      tags: [
+        "am_notified",
+        "customer_support",
+        "push_to_veteran",
+      ],
+      assignee_id: null,
+    },
+    {
+      id: 5,
+      tags: [
+        "am_notified",
+        "customer_support",
+        "draw_an_ace",
+      ],
+      assignee_id: null,
+    },
+    {
+      id: 6,
+      tags: [
+        "am_notified",
+        "customer_support",
+        "greenhouse_recruiting_product",
+      ],
+      assignee_id: null,
+    }
+  ];
+
+  return fakeTickets;
+}
+
 function fetchOpenTickets() {
   const subdomain = getSubdomain();
   const username = getUsername();
@@ -153,16 +209,16 @@ function fetchOpenTickets() {
   };
 
   const jsonResponse = fetchJson(searchUrl, options);
-  const MAX_TICKETS_PER_AGENT = getMaxTicketsPerAgent();
-  const maxOpenTickets = jsonResponse.results.slice(0, MAX_TICKETS_PER_AGENT);
+  const MAX_TICKETS_PER_ROUND = getMaxTicketsPerRound();
+  const maxOpenTickets = jsonResponse.results.slice(0, MAX_TICKETS_PER_ROUND);
 
   getDebugSheet().getRange("A2").setValue(maxOpenTickets);
 
   return maxOpenTickets;
 }
 
-function postTicketAssignment_(subdomain, userName, token, ticketId, agentUserId) {
-  token = userName + "/token:" + token;
+function postTicketAssignment_(subdomain, username, token, ticketId, agentUserId) {
+  token = username + "/token:" + token;
   var encode = Utilities.base64Encode(token);
 
   const payload = {
@@ -192,6 +248,217 @@ function postTicketAssignment_(subdomain, userName, token, ticketId, agentUserId
 
   // posted successfully?
   return assigneeId == agentUserId;
+}
+
+function getSortedAgents() {
+  var agents = getAgentSheet().getDataRange().getValues();
+
+  // Remove the header row
+  agents.shift();
+
+  var sortedAgents = agents.map(function(agent, index) {
+    return {
+      row: index,
+      data: agent,
+    };
+  });
+
+  sortedAgents = sortedAgents.sort(sortByNumTicketsAssigned);
+
+  logObject('sorted agents ===', sortedAgents.map(function(obj) { return obj.data; }));
+
+  return sortedAgents;
+}
+
+function sortByNumTicketsAssigned(agentOne, agentTwo) {
+  const TICKETS_ASSIGNED_INDEX = 8;
+
+  return agentOne.data[TICKETS_ASSIGNED_INDEX] - agentTwo.data[TICKETS_ASSIGNED_INDEX];
+}
+
+function getAgentToAssign(ticket) {
+  const sortedAgents = getSortedAgents();
+  const ACTIVE_INDEX = 0;
+  const TICKETS_ASSIGNED_INDEX = 8;
+
+  var agent, numTicketsAssigned;
+
+  for(var i = 0; i < sortedAgents.length; i++) {
+    agent = sortedAgents[i].data;
+    numTicketsAssigned = parseInt(agent[TICKETS_ASSIGNED_INDEX], 10);
+
+    logObject('Agent ====', agent);
+
+    if('Yes' === agent[ACTIVE_INDEX] && ticketTagsMatchAgentTags(ticket, agent) && numTicketsAssigned < getMaxTicketsPerAgent()) {
+      return sortedAgents[i];
+    }
+  }
+
+  return null;
+}
+
+function logObject(preface, obj) {
+  var str = preface;
+
+  str += ' {';
+
+  for (key in Object.keys(obj)) {
+    str += key + ':' + obj[key] + ', ';
+  }
+
+  str += ' }';
+
+  debug(str);
+}
+
+function ticketTagsMatchAgentTags(ticket, agent) {
+  const ticketTags = ticket.tags;
+  const agentTags = tagsForAgent(agent);
+
+  // Any agent can handle an untagged ticket
+  return agentSatisifiesTicketReqs(agentTags, ticketTags);
+}
+
+function hasDrawAnAce(ticketTags) {
+  const DRAW_AN_ACE = 'draw_an_ace';
+  return ticketTags.indexOf(DRAW_AN_ACE) >= 0;
+}
+
+function hasPushToVeteran(ticketTags) {
+  const PUSH_TO_VETERAN = 'push_to_veteran';
+  return ticketTags.indexOf(PUSH_TO_VETERAN) >= 0;
+}
+
+function hasTicketRequirements(ticketTags) {
+  return hasPushToVeteran(ticketTags) || hasDrawAnAce(ticketTags);
+}
+
+function agentSatisifiesTicketReqs(agentTags, ticketTags) {
+  const DRAW_AN_ACE = 'draw_an_ace';
+  const PUSH_TO_VETERAN = 'push_to_veteran';
+
+  var requiredTags = [];
+  if (hasDrawAnAce(ticketTags)) {
+    requiredTags.push(DRAW_AN_ACE)
+  }
+
+  if (hasPushToVeteran(ticketTags)) {
+    requiredTags.push(PUSH_TO_VETERAN)
+  }
+
+  if (requiredTags.length == 0) { return true; }
+
+  for (var i = 0; i < requiredTags.length; i++) {
+    if (agentTags.indexOf(requiredTags[i]) < 0) {
+      return false
+    }
+  }
+
+  return true
+}
+
+function tagsForAgent(agent) {
+  const TEST_TAG_INDEX = 4;
+  const DRAW_AN_ACE_TAG_INDEX = 5;
+  const PUSH_TO_VETERAN_TAG_INDEX = 6;
+
+  var agentTags = [];
+
+  if(agent[TEST_TAG_INDEX].length > 0) {
+    agentTags.push('rlbaker_test');
+  }
+
+  if(agent[DRAW_AN_ACE_TAG_INDEX].length > 0) {
+    agentTags.push('draw_an_ace');
+  }
+
+  if(agent[PUSH_TO_VETERAN_TAG_INDEX].length > 0) {
+    agentTags.push('push_to_veteran');
+  }
+
+  return agentTags;
+}
+
+function v2AssignTickets() {
+  const AGENT_NAME_INDEX = 1;
+  const openTickets = fetchOpenTickets();
+
+  const numTicketsToReview = Math.min(openTickets.length, getMaxTicketsPerRound());
+
+  var ticket, agentToAssign, agentRow, agentData;
+
+  debug("Number of tickets to assign:" + numTicketsToReview);
+
+  for(var index = 0; index < numTicketsToReview; index++) {
+    ticket = openTickets[index];
+    debug('Tags for ticket ' + ticket.id + ': ' + ticket.tags);
+
+    if(ticket.assignee_id) { debug('Skip ticket (already assigned): ' + ticket.id); continue; }
+
+    agentToAssign = getAgentToAssign(ticket);
+
+    if(agentToAssign) {
+      agentData = agentToAssign.data
+
+      assignTicketInZendesk(ticket, agentData);
+      debug('Assign ticket ' + ticket.id + ' to ' + agentData[AGENT_NAME_INDEX]);
+
+      setAssignedTicketsPerAgent();
+      logTicket(ticket, agentData)
+    } else {
+      debug('Skip ticket (no agents for ticket): ' + ticket.id);
+    }
+  }
+}
+
+function assignTicketInZendesk(ticket, agent) {
+  const payload = {
+    "ticket": {
+      "assignee_id" : parseInt(agent.id)
+    }
+   };
+
+  const options = {
+    'method': 'put',
+    'contentType': 'application/json',
+    'headers': {
+      'Authorization': 'Basic ' + getAuthorizationToken(),
+    },
+    payload: JSON.stringify(payload),
+  }
+
+  if(isReadonly()) {
+    var assigneeId = agent.id;
+  } else {
+    var ticket = fetchJson(url, options)
+    var assigneeId = ticket.ticket.assignee_id.toString();
+  }
+
+}
+
+function getAuthorizationToken() {
+  const username = getUsername();
+  const token = getToken();
+
+  return Utilities.base64Encode(username + '/token:' + token);
+}
+
+function logTicket(ticket, agentData) {
+  if(!isDebugMode()) { return }
+
+  const logSheet = getTicketLogSheet();
+  const agentId = agentData[2];
+  const agentName = agentData[1];
+
+  logSheet.insertRowBefore(2);
+  logSheet.getRange("A2").setValue(Date());
+  logSheet.getRange("B2").setValue(ticket.id);
+  logSheet.getRange("C2").setValue(ticket.assignee_id || "Unassigned");
+  logSheet.getRange("D2").setValue(ticket.tags);
+//  logSheet.getRange("E2").setValue(formType || "Invalid Form Type");
+  logSheet.getRange("F2").setValue("Ticket Assigned Automatically");
+  logSheet.getRange("G2").setValue(agentName);
+  logSheet.getRange("H2").setValue(agentId);
 }
 
 function seekNextAvailableAgentItem_(formType) {
@@ -257,7 +524,7 @@ function seekPreviouslyAssignedAgentItem_(rows) {
 // push_to_veteran for legacy gambler column
 function parseFormType_(tags) {
   const agentSheet = getAgentSheet();
-  const maxRange = getMaxTicketsPerAgent();
+  const maxRange = getMaxTicketsPerRound();
 
   // determine the dynamic range
   var dynamicRangeMax;
@@ -287,7 +554,7 @@ function parseFormType_(tags) {
 }
 
 function getFormColumn_(formType) {
-  const maxRange = getMaxTicketsPerAgent();
+  const maxRange = getMaxTicketsPerRound();
   const agentSheet = getAgentSheet();
 
   debug("getFormColumn_ maxRange:" + maxRange);
@@ -486,6 +753,12 @@ function getTicketLogSheet() {
   return getSpreadsheet().getSheetByName('Assignment Log');
 }
 
+function getMaxTicketsPerRound() {
+  const maxTicketsPerRound = PropertiesService.getScriptProperties().getProperty('maxTicketsPerRound');
+
+  return parseInt(maxTicketsPerRound, 10);
+}
+
 function getMaxTicketsPerAgent() {
   const maxTicketsPerAgent = PropertiesService.getScriptProperties().getProperty('maxTicketsPerAgent');
 
@@ -513,7 +786,6 @@ function setConfiguration() {
   PropertiesService.getScriptProperties().setProperty('subdomain', subdomain);
 
   const username = configurationSheet.getRange('B2').getValue();
-  PropertiesService.getScriptProperties().setProperty('userName', username);
   PropertiesService.getScriptProperties().setProperty('username', username);
 
   const zendeskToken = configurationSheet.getRange('B3').getValue();
@@ -528,7 +800,10 @@ function setConfiguration() {
   const readonly = configurationSheet.getRange('B7').getValue();
   PropertiesService.getScriptProperties().setProperty('readonly', readonly);
 
-  const maxTicketsPerAgent = configurationSheet.getRange('B6').getValue();
+  const maxTicketsPerRound = configurationSheet.getRange('B6').getValue();
+  PropertiesService.getScriptProperties().setProperty('maxTicketsPerRound', maxTicketsPerRound);
+
+  const maxTicketsPerAgent = configurationSheet.getRange('B8').getValue() || '5';
   PropertiesService.getScriptProperties().setProperty('maxTicketsPerAgent', maxTicketsPerAgent);
 
   debug('Set Configuration:');
@@ -536,9 +811,13 @@ function setConfiguration() {
 }
 
 function main() {
+  debug('==== Configuration Values ===');
   setConfiguration();
 
+  debug('==== Set Agent Statuses ===');
   setAgentStatuses();
 
-  assignTickets();
+  debug('==== Assign Tickets ===');
+  v2AssignTickets();
+  // assignTickets();
 }

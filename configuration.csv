@@ -3,5 +3,6 @@ username,username@example.com
 token,your-token
 working hours,9-17,12-20
 daylight savings time,no
-max tickets per person, 10
+max tickets per round, 10
 readonly,true
+max tickets per agent, 5
