@@ -381,11 +381,12 @@ function tagsForAgent(agent) {
 
 function v2AssignTickets() {
   const AGENT_NAME_INDEX = 1;
+  const AGENT_ID_INDEX = 2;
   const openTickets = fetchOpenTickets();
 
   const numTicketsToReview = Math.min(openTickets.length, getMaxTicketsPerRound());
 
-  var ticket, agentToAssign, agentRow, agentData;
+  var ticket, agentToAssign, agentRow, agentData, agentId;
 
   debug("Number of tickets to assign:" + numTicketsToReview);
 
@@ -399,8 +400,9 @@ function v2AssignTickets() {
 
     if(agentToAssign) {
       agentData = agentToAssign.data
+      agentId = agentData[AGENT_ID_INDEX];
 
-      assignTicketInZendesk(ticket, agentData);
+      assignTicketInZendesk(ticket, agentId);
       debug('Assign ticket ' + ticket.id + ' to ' + agentData[AGENT_NAME_INDEX]);
 
       setAssignedTicketsPerAgent();
@@ -411,10 +413,12 @@ function v2AssignTickets() {
   }
 }
 
-function assignTicketInZendesk(ticket, agent) {
+function assignTicketInZendesk(ticket, agentId) {
+  const url = "https://" + getSubdomain() + ".zendesk.com/api/v2/tickets/" + ticket.id + ".json";
+
   const payload = {
     "ticket": {
-      "assignee_id" : parseInt(agent.id)
+      "assignee_id" : parseInt(agentId)
     }
    };
 
@@ -428,12 +432,10 @@ function assignTicketInZendesk(ticket, agent) {
   }
 
   if(isReadonly()) {
-    var assigneeId = agent.id;
+    debug('Fetch: ' + url + ' for agent ' + agentId);
   } else {
-    var ticket = fetchJson(url, options)
-    var assigneeId = ticket.ticket.assignee_id.toString();
+    fetchJson(url, options)
   }
-
 }
 
 function getAuthorizationToken() {
