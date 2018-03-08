@@ -708,8 +708,9 @@ function isESTWeekDay() {
   const SUNDAY = 0;
 
   const now = new Date();
-  const day = getCurrentUtcDay();
   const hour = getCurrentUtcHour();
+
+  var day = getCurrentUtcDay();
 
   // Correct for ET day vs. UTC day
   if(hour + offsetFromUTC() < 0) {
