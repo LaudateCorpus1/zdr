@@ -734,7 +734,7 @@ function fetchJson(url, options) {
 
 // Getters
 function getSpreadsheet() {
-  const sheetId = "SHEET_ID";
+  const sheetId = PropertiesService.getScriptProperties().getProperty('sheetId') || "SHEET_ID";
 
   return SpreadsheetApp.openById(sheetId);
 }
@@ -807,6 +807,11 @@ function setConfiguration() {
 
   const maxTicketsPerAgent = configurationSheet.getRange('B8').getValue() || '5';
   PropertiesService.getScriptProperties().setProperty('maxTicketsPerAgent', maxTicketsPerAgent);
+
+  const sheetId = configurationSheet.getRange('B9');
+  if(sheetId && sheetId.length > 0) {
+      PropertiesService.getScriptProperties().setProperty('sheetId', sheetId);
+  }
 
   debug('Set Configuration:');
   debug(PropertiesService.getScriptProperties().getProperties());
