@@ -456,7 +456,7 @@ function logTicket(ticket, agentData) {
   logSheet.getRange("A2").setValue(Date());
   logSheet.getRange("B2").setValue(ticket.id);
   logSheet.getRange("C2").setValue(ticket.assignee_id || "Unassigned");
-  logSheet.getRange("D2").setValue(ticket.tags);
+  logSheet.getRange("D2").setValue(ticket.tags.toString());
 //  logSheet.getRange("E2").setValue(formType || "Invalid Form Type");
   logSheet.getRange("F2").setValue("Ticket Assigned Automatically");
   logSheet.getRange("G2").setValue(agentName);
