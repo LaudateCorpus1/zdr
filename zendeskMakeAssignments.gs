@@ -456,7 +456,7 @@ function logTicket(ticket, agentData) {
   logSheet.getRange("A2").setValue(Date());
   logSheet.getRange("B2").setValue(ticket.id);
   logSheet.getRange("C2").setValue(ticket.assignee_id || "Unassigned");
-  logSheet.getRange("D2").setValue(ticket.tags);
+  logSheet.getRange("D2").setValue(ticket.tags.toString());
 //  logSheet.getRange("E2").setValue(formType || "Invalid Form Type");
   logSheet.getRange("F2").setValue("Ticket Assigned Automatically");
   logSheet.getRange("G2").setValue(agentName);
@@ -708,8 +708,9 @@ function isESTWeekDay() {
   const SUNDAY = 0;
 
   const now = new Date();
-  const day = getCurrentUtcDay();
   const hour = getCurrentUtcHour();
+
+  var day = getCurrentUtcDay();
 
   // Correct for ET day vs. UTC day
   if(hour + offsetFromUTC() < 0) {
@@ -734,7 +735,7 @@ function fetchJson(url, options) {
 
 // Getters
 function getSpreadsheet() {
-  const sheetId = "SHEET_ID";
+  const sheetId = PropertiesService.getScriptProperties().getProperty('sheetId') || "SHEET_ID";
 
   return SpreadsheetApp.openById(sheetId);
 }
@@ -807,6 +808,11 @@ function setConfiguration() {
 
   const maxTicketsPerAgent = configurationSheet.getRange('B8').getValue() || '5';
   PropertiesService.getScriptProperties().setProperty('maxTicketsPerAgent', maxTicketsPerAgent);
+
+  const sheetId = configurationSheet.getRange('B9');
+  if(sheetId && sheetId.length > 0) {
+      PropertiesService.getScriptProperties().setProperty('sheetId', sheetId);
+  }
 
   debug('Set Configuration:');
   debug(PropertiesService.getScriptProperties().getProperties());
