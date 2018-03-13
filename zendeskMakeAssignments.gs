@@ -105,8 +105,19 @@ function setAssignedTicketsPerAgent() {
 
     ticketCount = fetchAssignedTickets(agentId);
 
+    debug('[Zendesk API] Agent ' + agentId + ' has ' + ticketCount + ' tickets as of ' + new Date());
     agentSheet.getRange(TICKETS_ASSIGNED_COLUMN + rowIndex).setValue(ticketCount);
   });
+}
+
+function recordFakeTicketAssignment(a1Notation) {
+  const agentSheet = getAgentSheet();
+
+  var existingValue = parseInt(agentSheet.getRange(a1Notation).getValue() || 0, 10);
+
+  agentSheet.getRange(a1Notation).setValue(existingValue + 1);
+
+  debug("Incremented cell " + a1Notation + ' by one');
 }
 
 function fetchAssignedTickets(agentId) {
@@ -191,6 +202,11 @@ function fakeOpenTickets() {
 }
 
 function fetchOpenTickets() {
+  if(isReadonly()) {
+    debug('Returning fake open tickets');
+    return fakeOpenTickets();
+  }
+
   const subdomain = getSubdomain();
   const username = getUsername();
   const token = getToken();
@@ -251,21 +267,24 @@ function postTicketAssignment_(subdomain, username, token, ticketId, agentUserId
 }
 
 function getSortedAgents() {
+  // Google sheets is 1 indexed and we've removed the first row
+  const OFFSET = 2;
+
   var agents = getAgentSheet().getDataRange().getValues();
 
   // Remove the header row
   agents.shift();
 
+  // Preserve the original index so we know what row to update later
   var sortedAgents = agents.map(function(agent, index) {
     return {
-      row: index,
+      row: index + OFFSET,
       data: agent,
     };
   });
 
-  sortedAgents = sortedAgents.sort(sortByNumTicketsAssigned);
-
-  logObject('sorted agents ===', sortedAgents.map(function(obj) { return obj.data; }));
+  // Prefer agents who have less tickets assigned to them
+  sortedAgents.sort(sortByNumTicketsAssigned);
 
   return sortedAgents;
 }
@@ -280,17 +299,27 @@ function getAgentToAssign(ticket) {
   const sortedAgents = getSortedAgents();
   const ACTIVE_INDEX = 0;
   const TICKETS_ASSIGNED_INDEX = 8;
+  const AGENT_NAME_INDEX = 1;
+  const maxTicketsPerAgent = getMaxTicketsPerAgent();
 
-  var agent, numTicketsAssigned;
+  debug('Max tickets per agent: ' + maxTicketsPerAgent);
+
+  var agent, agentData, agentRow, numTicketsAssigned;
+
+  debug('Total agents: ' + sortedAgents.length);
 
   for(var i = 0; i < sortedAgents.length; i++) {
-    agent = sortedAgents[i].data;
-    numTicketsAssigned = parseInt(agent[TICKETS_ASSIGNED_INDEX], 10);
+    agent = sortedAgents[i]
+    agentRow = agent.row;
+    agentData = agent.data;
+    numTicketsAssigned = parseInt(agentData[TICKETS_ASSIGNED_INDEX], 10);
 
-    logObject('Agent ====', agent);
+    debug('Evaluating agent - ' + agentData[AGENT_NAME_INDEX] + ', active? ' + agentData[ACTIVE_INDEX] + ', ticket count: ' + numTicketsAssigned + ', row: ' + agentRow);
 
-    if('Yes' === agent[ACTIVE_INDEX] && ticketTagsMatchAgentTags(ticket, agent) && numTicketsAssigned < getMaxTicketsPerAgent()) {
-      return sortedAgents[i];
+    if('Yes' === agentData[ACTIVE_INDEX] &&
+        ticketTagsMatchAgentTags(ticket, agentData) &&
+        numTicketsAssigned < maxTicketsPerAgent) {
+      return agent;
     }
   }
 
@@ -315,17 +344,22 @@ function ticketTagsMatchAgentTags(ticket, agent) {
   const ticketTags = ticket.tags;
   const agentTags = tagsForAgent(agent);
 
+  debug('Agent tags: ' + agentTags.toString());
+  debug('Ticket tags: ' + ticketTags.toString());
+
   // Any agent can handle an untagged ticket
   return agentSatisifiesTicketReqs(agentTags, ticketTags);
 }
 
 function hasDrawAnAce(ticketTags) {
   const DRAW_AN_ACE = 'draw_an_ace';
+
   return ticketTags.indexOf(DRAW_AN_ACE) >= 0;
 }
 
 function hasPushToVeteran(ticketTags) {
   const PUSH_TO_VETERAN = 'push_to_veteran';
+
   return ticketTags.indexOf(PUSH_TO_VETERAN) >= 0;
 }
 
@@ -339,22 +373,22 @@ function agentSatisifiesTicketReqs(agentTags, ticketTags) {
 
   var requiredTags = [];
   if (hasDrawAnAce(ticketTags)) {
-    requiredTags.push(DRAW_AN_ACE)
+    requiredTags.push(DRAW_AN_ACE);
   }
 
   if (hasPushToVeteran(ticketTags)) {
-    requiredTags.push(PUSH_TO_VETERAN)
+    requiredTags.push(PUSH_TO_VETERAN);
   }
 
   if (requiredTags.length == 0) { return true; }
 
   for (var i = 0; i < requiredTags.length; i++) {
     if (agentTags.indexOf(requiredTags[i]) < 0) {
-      return false
+      return false;
     }
   }
 
-  return true
+  return true;
 }
 
 function tagsForAgent(agent) {
@@ -380,33 +414,39 @@ function tagsForAgent(agent) {
 }
 
 function v2AssignTickets() {
+  const TICKETS_ASSIGNED_COLUMN = 'I';
   const AGENT_NAME_INDEX = 1;
   const AGENT_ID_INDEX = 2;
   const openTickets = fetchOpenTickets();
-
   const numTicketsToReview = Math.min(openTickets.length, getMaxTicketsPerRound());
 
-  var ticket, agentToAssign, agentRow, agentData, agentId;
+  var ticket, agentToAssign, agentRow, agentData, agentId, a1Notation;
 
-  debug("Number of tickets to assign:" + numTicketsToReview);
+  debug('Total ' + numTicketsToReview + " tickets to assign");
 
   for(var index = 0; index < numTicketsToReview; index++) {
     ticket = openTickets[index];
-    debug('Tags for ticket ' + ticket.id + ': ' + ticket.tags);
+    debug('Evaluating ticket ' + ticket.id + ', tags: ' + ticket.tags);
 
     if(ticket.assignee_id) { debug('Skip ticket (already assigned): ' + ticket.id); continue; }
 
     agentToAssign = getAgentToAssign(ticket);
 
     if(agentToAssign) {
+      agentRow = agentToAssign.row;
       agentData = agentToAssign.data
       agentId = agentData[AGENT_ID_INDEX];
 
       assignTicketInZendesk(ticket, agentId);
-      debug('Assign ticket ' + ticket.id + ' to ' + agentData[AGENT_NAME_INDEX]);
 
-      setAssignedTicketsPerAgent();
-      logTicket(ticket, agentData)
+      if(isReadonly()) {
+        a1Notation = TICKETS_ASSIGNED_COLUMN + agentRow;
+        recordFakeTicketAssignment(a1Notation);
+      } else {
+        setAssignedTicketsPerAgent();
+      }
+
+      logTicket(ticket, agentData);
     } else {
       debug('Skip ticket (no agents for ticket): ' + ticket.id);
     }
@@ -432,7 +472,7 @@ function assignTicketInZendesk(ticket, agentId) {
   }
 
   if(isReadonly()) {
-    debug('Fetch: ' + url + ' for agent ' + agentId);
+    debug('Assign ticket ' + ticket.id + ' to agent ' + agentId);
   } else {
     fetchJson(url, options)
   }
